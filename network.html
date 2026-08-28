@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Draconis Fleet — Network Map</title>
+<meta name="description" content="The Draconis homelab network — every machine, its subnet and role, the storage tier, and the compute fleet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e14; --panel:#141b28; --panel2:#182234; --rail:#22304a; --rail2:#2c3d5c;
+    --ink:#c8d6e5; --mut:#7688a2; --dim:#4a5b76;
+    --amber:#ffb638; --cyan:#37d6e0; --green:#5fd97a; --violet:#a371f7; --red:#e5484d; --slate:#8296b3;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --disp:'Space Grotesk',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--disp);line-height:1.5;min-height:100vh;
+    background-image:radial-gradient(1100px 560px at 82% -10%,#12203a55,transparent),radial-gradient(900px 480px at -5% 108%,#1a142e44,transparent);
+    background-attachment:fixed}
+  .wrap{max-width:1120px;margin:0 auto;padding:40px 22px 80px}
+  a{color:inherit}
+  .kick{font-family:var(--mono);font-size:11.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--amber);margin:0 0 12px}
+  h1{font-family:var(--disp);font-weight:700;font-size:clamp(30px,5vw,50px);line-height:1.02;letter-spacing:-.02em;margin:0 0 8px}
+  .lede{color:var(--mut);max-width:70ch;margin:0;font-size:15px}
+  .crumb{font-family:var(--mono);font-size:12px;color:var(--dim);margin:0 0 22px}
+  .crumb a{color:var(--slate);text-decoration:none} .crumb a:hover{color:var(--amber)}
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:26px 0 8px}
+  .seg{display:inline-flex;border:1px solid var(--rail);border-radius:9px;overflow:hidden;font-family:var(--mono);font-size:12.5px}
+  .seg button{background:transparent;color:var(--mut);border:0;padding:8px 15px;cursor:pointer;transition:.14s}
+  .seg button.on{background:var(--panel2);color:var(--amber)}
+  .seg button:not(.on):hover{color:var(--ink)}
+  .count{font-family:var(--mono);font-size:11.5px;color:var(--dim);margin-left:auto}
+  /* subnet columns */
+  .lanes{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+  @media(max-width:760px){.lanes{grid-template-columns:1fr}}
+  .lane{border:1px solid var(--rail);border-radius:14px;background:linear-gradient(180deg,#0f1622,#0c121c);overflow:hidden}
+  .lanehead{padding:14px 16px;border-bottom:1px solid var(--rail);display:flex;flex-direction:column;gap:3px}
+  .lanehead .gw{font-family:var(--mono);font-size:11px;color:var(--dim)}
+  .lanehead .nm{font-family:var(--disp);font-weight:600;font-size:16px;display:flex;align-items:center;gap:9px}
+  .lanehead .wan{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan);
+    border:1px solid #1c4a52;border-radius:5px;padding:2px 7px}
+  .nodes{padding:12px;display:flex;flex-direction:column;gap:9px}
+  .node{position:relative;display:block;width:100%;text-align:left;cursor:pointer;color:inherit;text-decoration:none;
+    background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--rail);border-radius:11px;
+    padding:12px 13px 12px 15px;transition:border-color .15s,transform .15s}
+  .node::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:11px 0 0 11px;background:var(--ac,var(--slate))}
+  .node:hover{border-color:var(--rail2);transform:translateY(-1px)}
+  .node:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .nrow{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+  .nname{font-family:var(--disp);font-weight:600;font-size:15px;letter-spacing:-.01em}
+  .ntag{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--bg);
+    background:var(--ac,var(--slate));border-radius:4px;padding:2px 6px;font-weight:500}
+  .nrole{color:var(--mut);font-size:12.5px;margin-top:3px}
+  .nmeta{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:6px;display:flex;flex-wrap:wrap;gap:3px 12px}
+  .nmeta b{color:var(--slate);font-weight:400}
+  .drill{font-family:var(--mono);font-size:10.5px;color:var(--amber);margin-top:7px}
+  .badge{font-family:var(--mono);font-size:9.5px;padding:1px 6px;border-radius:4px;border:1px solid currentColor;margin-left:2px}
+  .b-off{color:#c96} .b-plan{color:var(--violet)} .b-multi{color:var(--cyan)}
+  /* group trays */
+  .tray{margin-top:16px;border:1px dashed var(--rail2);border-radius:14px;padding:14px 16px;background:#0c121c88}
+  .tray h3{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:0 0 12px;font-weight:500}
+  .traygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:9px}
+  .c-compute{--ac:var(--amber)} .c-agent{--ac:var(--cyan)} .c-storage{--ac:var(--green)}
+  .c-auto{--ac:var(--violet)} .c-gear{--ac:var(--slate)} .c-planned{--ac:var(--violet)} .c-legacy{--ac:var(--dim)}
+  /* legend */
+  .legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:20px 0 4px;font-family:var(--mono);font-size:11px;color:var(--mut)}
+  .legend .k{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .fabric{margin:14px 0 0;padding:12px 16px;border:1px solid var(--rail);border-radius:12px;background:#0e1520;
+    font-family:var(--mono);font-size:12px;color:var(--mut);display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+  .fabric b{color:var(--cyan);font-weight:500}
+  /* logical view */
+  .logical{margin-top:14px;display:grid;gap:14px}
+  .lcard{border:1px solid var(--rail);border-radius:14px;background:linear-gradient(180deg,#0f1622,#0c121c);padding:16px 18px}
+  .lcard h3{font-family:var(--disp);font-weight:600;font-size:16px;margin:0 0 4px;display:flex;align-items:center;gap:9px}
+  .lcard .sub{color:var(--mut);font-size:13px;margin:0 0 12px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-family:var(--mono);font-size:11.5px;color:var(--ink);background:var(--panel2);border:1px solid var(--rail);
+    border-radius:7px;padding:5px 10px}
+  .chip.pub{border-color:#2c5c3d;color:#8fe0a8} .chip.gate{border-color:#4a3c6b;color:#c3b3e6}
+  .flow{font-family:var(--mono);font-size:12.5px;color:var(--mut);line-height:1.9}
+  .flow b{color:var(--amber);font-weight:500} .flow .ar{color:var(--dim)}
+  /* detail drawer */
+  .scrim{position:fixed;inset:0;background:#04060acc;opacity:0;pointer-events:none;transition:.18s;z-index:5}
+  .scrim.on{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,92vw);background:linear-gradient(180deg,#101825,#0b111a);
+    border-left:1px solid var(--rail2);transform:translateX(100%);transition:.22s;z-index:6;overflow-y:auto;padding:26px 24px 40px}
+  .drawer.on{transform:none}
+  .drawer .x{position:absolute;top:16px;right:18px;background:transparent;border:0;color:var(--mut);font-size:22px;cursor:pointer;font-family:var(--mono)}
+  .drawer .x:hover{color:var(--ink)}
+  .dkick{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ac,var(--amber));margin:0 0 6px}
+  .drawer h2{font-family:var(--disp);font-weight:700;font-size:26px;margin:0 0 4px;letter-spacing:-.02em}
+  .drawer .drole{color:var(--mut);font-size:14px;margin:0 0 18px}
+  .specrow{display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-bottom:1px solid var(--rail);font-size:13.5px}
+  .specrow .sk{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+  .specrow .sv{color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
+  .ddesc{margin:16px 0 0;font-size:13.5px;line-height:1.6;color:var(--mut)}
+  .dlink{display:inline-block;margin-top:18px;font-family:var(--mono);font-size:12.5px;color:var(--amber);text-decoration:none;
+    border:1px solid #4a3a18;border-radius:8px;padding:8px 13px}
+  .dlink:hover{background:#1a1408}
+  footer{margin-top:44px;font-family:var(--mono);font-size:11.5px;color:var(--dim);display:flex;gap:16px;flex-wrap:wrap}
+  footer a{color:var(--mut);text-decoration:none;border-bottom:1px solid var(--rail)} footer a:hover{color:var(--cyan)}
+  .todo{color:var(--red)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="crumb"><a href="https://philmcneely.github.io/">◄ philmcneely.github.io</a> &nbsp;//&nbsp; Fleet Network Map</p>
+  <p class="kick">Draconis Homelab · Network Map</p>
+  <h1>The Fleet, Wired Up</h1>
+  <p class="lede">Every machine in the homelab — compute, agents, automation, and the ~1 PB storage tier — across two ISPs and two subnets. The GPU/compute boxes drill into the <a href="index.html" style="color:var(--amber)">LLM fleet map</a>.</p>
+
+  <div class="toolbar">
+    <div class="seg" role="tablist">
+      <button id="tPhys" class="on" onclick="setView('phys')">▚ Physical</button>
+      <button id="tLog" onclick="setView('log')">◇ Logical</button>
+    </div>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="legend" id="legend"></div>
+
+  <!-- PHYSICAL VIEW -->
+  <section id="phys">
+    <div class="fabric" id="fabric"></div>
+    <div class="lanes" id="lanes"></div>
+    <div class="tray" id="trayPlanned"></div>
+    <div class="tray" id="trayLegacy"></div>
+  </section>
+
+  <!-- LOGICAL VIEW -->
+  <section id="log" style="display:none">
+    <div class="logical" id="logical"></div>
+  </section>
+
+  <footer>
+    <span>© Phil McNeely · Draconis</span>
+    <a href="index.html">LLM Fleet Map</a>
+    <a href="https://philmcneely.github.io/">Home</a>
+  </footer>
+</div>
+
+<div class="scrim" id="scrim" onclick="closeD()"></div>
+<aside class="drawer" id="drawer" aria-hidden="true"><button class="x" onclick="closeD()">✕</button><div id="dbody"></div></aside>
+
+<script>
+const PUBLIC = true;               // public tier: hide exact IPs & tunnel internals
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ip=v=>PUBLIC?null:v;         // gate IPs behind tier
+
+// ---- NODE REGISTRY ----------------------------------------------------------
+// cat: compute|agent|storage|auto|gear|planned|legacy ; lan: 'A'|'B'|'both'|null
+const N = [
+ // --- LAN-A compute ---
+ {id:'hal9000',name:'HAL9000',cat:'compute',lan:'A',ip:'…225/226',role:'Central inference · service host',
+  specs:{CPU:'2× Xeon E5-2690 v4 · 56T',RAM:'503 GiB',GPU:'6× RTX 3090 · 144 GB',OS:'Ubuntu 24.04'},link:'index.html',
+  desc:'The fleet’s primary compute node and backend host — the free-CUDA inference tier plus the LLM proxy, shared memory, and the Karakuri software factory.'},
+ {id:'wopr',name:'WOPR',cat:'compute',lan:'A',ip:'…232/234',role:'Big dense + MoE inference',
+  specs:{CPU:'2× Xeon E5-2690 v4 · 56T',RAM:'251 GiB',GPU:'7× MI50 · 224 GB',OS:'Ubuntu 24.04'},link:'index.html',
+  desc:'The AMD/ROCm counterpart to HAL — the fleet’s largest usable discrete VRAM, for big dense models and MoE tenants.'},
+ {id:'macstudio',name:'Mac Studio',cat:'compute',lan:'A',ip:'…240',role:'Big-unified-memory inference',
+  specs:{CPU:'M3 Ultra · 28-core',RAM:'256 GB unified',GPU:'Apple M3 Ultra (Metal)',OS:'macOS 26.2'},link:'index.html',
+  desc:'The single largest addressable memory pool in the fleet — hosts models too big for any one GPU. Currently serves DeepSeek V4 Flash.'},
+ // --- LAN-A storage ---
+ {id:'yarr',name:'Yarr',cat:'storage',lan:'A',ip:'…212',role:'Bulk storage (SMB)',
+  specs:{Host:'Mac mini 2018',RAM:'16 GiB',Disk:'~48 disks ≈ 563 TB',OS:'macOS 11'},
+  desc:'The big storage box — ~48 shucked drives in 8-bay enclosures shared as raw SMB volumes. Slated to move macOS → Linux for reliable remounts.'},
+ {id:'philflix',name:'PhilFlix',cat:'storage',lan:'A',ip:'…13',role:'Media server',status:'offline',
+  specs:{Disk:'“a lot” (uncatalogued)',Status:'offline when last checked'},
+  desc:'The media server — a large, still-to-be-indexed library. Was offline at last check; part of the storage tier to bring under a proper index + backup.'},
+ {id:'philflixbackup',name:'PhilFlixBackup',cat:'storage',lan:'A',ip:'…213',role:'Storage node → Linux',status:'transition',
+  specs:{Host:'Mac mini 2012 (6,1)',RAM:'16 GiB',Disk:'enclosures offline',Note:'first Linux storage node'},
+  desc:'A 2012 Mac mini, “not really a backup anymore, just never renamed.” Being converted into the first Linux storage node of the rebuilt tier.'},
+ // --- LAN-A automation (multi-homed) ---
+ {id:'beelink',name:'Beelink',cat:'auto',lan:'both',ip:'A …220 · B …10',role:'n8n automation hub',
+  specs:{CPU:'Intel i3-N305',RAM:'32 GiB',OS:'Ubuntu 24.04',Nets:'both subnets + overlay'},
+  desc:'The workflow automation hub (n8n). Multi-homed on both subnets plus a 10.100.x overlay — deliberately kept to automation, not new services.'},
+
+ // --- LAN-B compute (eGPU utility) ---
+ {id:'drtheopolis',name:'DrTheopolis',cat:'compute',lan:'B',ip:'…4',role:'Dual-eGPU utility inference',
+  specs:{Host:'Mac mini 2018 · i7 6c/12t',RAM:'16 GiB',GPU:'2× RX 6800 · 32 GB',OS:'macOS 15.7'},link:'index.html',
+  desc:'Two independent 16 GB AMD cards over Thunderbolt, each running its own model on Metal (ToshLLM) — built for A/B and grading runs, not pooled.'},
+ {id:'apol',name:'apol',cat:'compute',lan:'B',ip:'…222',role:'Dual Radeon VII eGPU',
+  specs:{Host:'T2 Mac · Linux',RAM:'16 GiB',GPU:'2× Radeon VII · 32 GB',OS:'Ubuntu 24.04 (T2)'},link:'index.html',
+  desc:'A Thunderbolt eGPU box — each Radeon VII runs one dedicated model for a specific crew agent, kept resident for a stable local endpoint.'},
+ {id:'twiki',name:'Twiki',cat:'compute',lan:'B',ip:'…7',role:'Single Radeon VII eGPU · MoE',
+  specs:{Host:'Mac mini 2018',GPU:'1× Radeon VII · 16 GB (of 2)',OS:'macOS 15.7'},link:'index.html',
+  desc:'Secondary eGPU inference node — a Mac mini with a Radeon VII over Thunderbolt, MoE-tuned; DrTheopolis’s “consort.”'},
+ // --- LAN-B agents ---
+ {id:'kirk',name:'kirk · TheMacPro',cat:'agent',lan:'B',ip:'…77',role:'Primary dev · orchestration · backup hub',
+  specs:{Host:'Mac Pro 2019 · Xeon',RAM:'768 GiB',Disk:'16× 14TB = 224 TB (SOP 112 TB irreplaceable)',OS:'macOS 15.6'},
+  desc:'Dev home base, deploy origin, fleet-fixer/watchdog host — and the backup hub, holding the crown-jewel 112 TB 3D set with the encryption passphrase.'},
+ {id:'max',name:'Max',cat:'agent',lan:'B',ip:'…33/36',role:'Worker agent · security · Hermes · game server',
+  specs:{CPU:'Xeon E5-2697 v2 · 12c/24t',RAM:'125 GiB',GPU:'2× legacy Radeon (display)',OS:'Ubuntu 24.04',Nets:'3 NICs'},
+  desc:'Security-specialty worker plus the Hermes (Maximilian/Vincent) agents and game servers. Multi-network capable (3 NICs).'},
+ {id:'scotty',name:'Scotty',cat:'agent',lan:'B',ip:'…41',role:'Worker agent',
+  specs:{Host:'Mac mini',OS:'macOS',Model:'dedicated Qwen3.8-27B (apol)'},
+  desc:'Crew worker/QA agent, wired to a dedicated Qwen3.8-27B served from apol.'},
+ {id:'spock',name:'Spock',cat:'agent',lan:'B',ip:'…53',role:'Worker agent · research',
+  specs:{Host:'Mac mini',OS:'macOS'},desc:'Crew worker with a research specialty.'},
+ {id:'mccoy',name:'McCoy',cat:'agent',lan:'B',ip:'…52',role:'Worker agent · diagnostics',
+  specs:{Host:'Mac mini 2018',OS:'macOS 15.7'},desc:'Crew worker with a diagnostics specialty; runs its own llm-proxy.'},
+
+ // --- NOT ON NETWORK YET ---
+ {id:'k8s1',name:'Kubernetes node 1',cat:'planned',lan:null,role:'K8s cluster (planned)',
+  specs:{Status:'not on network yet',Specs:'TBD'},desc:'One of three boxes earmarked for a Kubernetes cluster — not yet racked/networked.',todo:true},
+ {id:'k8s2',name:'Kubernetes node 2',cat:'planned',lan:null,role:'K8s cluster (planned)',
+  specs:{Status:'not on network yet',Specs:'TBD'},desc:'Second K8s node — not yet on the network.',todo:true},
+ {id:'k8s3',name:'Kubernetes node 3',cat:'planned',lan:null,role:'K8s cluster (planned)',
+  specs:{Status:'not on network yet',Specs:'TBD'},desc:'Third K8s node — not yet on the network.',todo:true},
+ {id:'t7810',name:'Dell Precision T7810',cat:'planned',lan:null,role:'Workstation (planned)',
+  specs:{Status:'not on network yet',Specs:'dual-Xeon workstation — TBD'},desc:'A Dell Precision T7810 workstation, not yet brought onto the network.',todo:true},
+ {id:'r730a',name:'Dell R730 #1',cat:'planned',lan:null,role:'Rack server (2U)',
+  specs:{Chassis:'PowerEdge R730 · 2U',Specs:'dual-Xeon — TBD',Status:'not deployed yet'},desc:'One of two Dell PowerEdge R730 rack servers. Specs, role, and on-network status to be captured.',todo:true},
+ {id:'r730b',name:'Dell R730 #2',cat:'planned',lan:null,role:'Rack server (2U)',
+  specs:{Chassis:'PowerEdge R730 · 2U',Specs:'dual-Xeon — TBD',Status:'not deployed yet'},desc:'Second Dell PowerEdge R730 rack server. Details TBD.',todo:true},
+ {id:'c6145',name:'Dell C6145',cat:'planned',lan:null,role:'Multi-node AMD server',
+  specs:{Chassis:'PowerEdge C6145 · 2U',Specs:'multi-node AMD Opteron — TBD',Status:'not deployed yet'},desc:'A Dell PowerEdge C6145 (dense multi-node AMD chassis). Node count, specs, and status to be captured.',todo:true},
+ {id:'cseries',name:'Dell C-series nodes (×several)',cat:'planned',lan:null,role:'Dense compute nodes',
+  specs:{Chassis:'Dell C-series (C6220 / C5xxx?)',Count:'several — TBD',Status:'not deployed yet'},desc:'Several Dell C-series dense compute nodes (exact model/count TBD — clarify from photos).',todo:true},
+
+ // --- LEGACY / UNKNOWN ---
+ {id:'oldmacpro',name:'Old Mac Pro',cat:'legacy',lan:null,role:'Legacy tower',
+  specs:{Status:'details TBD'},desc:'The earlier Mac Pro (distinct from kirk/TheMacPro). Role, specs, and status still to be captured.',todo:true},
+ {id:'stormtrooper',name:'Stormtrooper',cat:'legacy',lan:null,role:'Legacy / role TBD',
+  specs:{Status:'details TBD'},desc:'“Stormtrooper” — box details to be captured (role, specs, on-network status).',todo:true},
+];
+
+// ---- network gear / fabric ----
+const GEAR={
+ A:{name:'LAN-A · primary',gw:PUBLIC?'gateway ·1':'192.168.0.1',router:'Qhora router',wan:'WAN 1'},
+ B:{name:'LAN-B · mesh',gw:PUBLIC?'gateway ·1':'192.168.1.1',router:'Deco mesh',wan:'WAN 2'},
+};
+
+const CATLBL={compute:'Compute / GPU',agent:'Agents & dev',storage:'Storage',auto:'Automation',planned:'Planned',legacy:'Legacy'};
+const CATCLS={compute:'c-compute',agent:'c-agent',storage:'c-storage',auto:'c-auto',gear:'c-gear',planned:'c-planned',legacy:'c-legacy'};
+const CATVAR={compute:'--amber',agent:'--cyan',storage:'--green',auto:'--violet',planned:'--violet',legacy:'--dim'};
+
+function badge(n){
+  if(n.status==='offline')return ' <span class="badge b-off">offline</span>';
+  if(n.status==='transition')return ' <span class="badge b-off">→ linux</span>';
+  if(n.lan==='both')return ' <span class="badge b-multi">multi-homed</span>';
+  if(n.cat==='planned')return ' <span class="badge b-plan">planned</span>';
+  return '';
+}
+function metaLine(n){
+  const bits=[];
+  if(!PUBLIC && n.ip) bits.push('<b>'+esc(n.ip)+'</b>');
+  const s=n.specs||{};
+  if(s.GPU) bits.push(esc(s.GPU));
+  else if(s.Disk) bits.push(esc(s.Disk));
+  else if(s.CPU) bits.push(esc(s.CPU));
+  else if(s.Host) bits.push(esc(s.Host));
+  return bits.length?'<div class="nmeta">'+bits.join('<span>·</span>')+'</div>':'';
+}
+function nodeCard(n){
+  const cls=CATCLS[n.cat]||'c-gear';
+  const drill=n.link?'<div class="drill">→ open in LLM map</div>':'';
+  const todo=n.todo?' <span class="todo">•</span>':'';
+  return `<button class="node ${cls}" onclick="openD('${n.id}')">
+    <div class="nrow"><span class="nname">${esc(n.name)}${todo}</span>
+      <span class="ntag">${esc(CATLBL[n.cat]||n.cat)}</span>${badge(n)}</div>
+    <div class="nrole">${esc(n.role)}</div>
+    ${metaLine(n)}${drill}</button>`;
+}
+
+function renderPhysical(){
+  // fabric summary
+  document.getElementById('fabric').innerHTML =
+    `<span>Two ISPs · dual-WAN</span><span class="ar">—</span>`+
+    `<b>${esc(GEAR.A.router)}</b> <span>(${esc(GEAR.A.name)})</span>`+
+    `<span class="ar">⇄ hairpin bridge ⇄</span>`+
+    `<b>${esc(GEAR.B.router)}</b> <span>(${esc(GEAR.B.name)})</span>`+
+    `<span class="ar">+</span><span>10.100.x overlay</span>`;
+  // lanes
+  const order=['compute','storage','auto','agent'];
+  const laneHTML=lan=>{
+    const g=GEAR[lan];
+    const list=N.filter(n=>n.lan===lan||(lan==='A'&&n.lan==='both'));
+    list.sort((a,b)=>order.indexOf(a.cat)-order.indexOf(b.cat));
+    return `<div class="lane"><div class="lanehead">
+        <div class="nm">${esc(g.name)} <span class="wan">${esc(g.wan)}</span></div>
+        <div class="gw">${esc(g.router)} · ${esc(g.gw)} · ${list.length} hosts</div>
+      </div><div class="nodes">${list.map(nodeCard).join('')}</div></div>`;
+  };
+  document.getElementById('lanes').innerHTML = laneHTML('A')+laneHTML('B');
+  // planned tray
+  const planned=N.filter(n=>n.cat==='planned');
+  document.getElementById('trayPlanned').innerHTML =
+    `<h3>Not on the network yet — planned</h3><div class="traygrid">${planned.map(nodeCard).join('')}</div>`;
+  const legacy=N.filter(n=>n.cat==='legacy');
+  document.getElementById('trayLegacy').innerHTML =
+    `<h3>Legacy / to be catalogued</h3><div class="traygrid">${legacy.map(nodeCard).join('')}</div>`;
+}
+
+function renderLegend(){
+  const items=[['compute','GPU / compute'],['agent','agents & dev'],['storage','storage'],['auto','automation'],['planned','planned / offline']];
+  document.getElementById('legend').innerHTML = items.map(([c,l])=>
+    `<span class="k"><span class="sw" style="background:var(${CATVAR[c]})"></span>${l}</span>`).join('')
+    + `<span class="k"><span class="todo">•</span> needs your input</span>`;
+  const live=N.filter(n=>n.cat!=='planned'&&n.cat!=='legacy'&&n.status!=='offline').length;
+  document.getElementById('count').textContent = `${N.length} machines · ${live} live · ${N.filter(n=>n.cat==='planned').length} planned`;
+}
+
+function renderLogical(){
+  const el=document.getElementById('logical');
+  const pub=['docs.draconis.io','daemon.draconis.io','studio.draconis.io','public.draconis.io','philmcneely.github.io'];
+  const gate=['switchboard','openwebui','ladder','mnemo','pixel','canvas','shell','voice-forge','fleet','thegibson','openhands'];
+  el.innerHTML = `
+  <div class="lcard"><h3><span class="sw" style="background:var(--amber)"></span> Edge & exposure</h3>
+    <p class="sub">Nothing is port-forwarded. Everything reachable from outside rides Cloudflare Zero-Trust tunnels off HAL; public pages are on GitHub Pages.</p>
+    <div style="margin-bottom:10px"><div class="nrole" style="margin-bottom:6px;color:var(--dim);font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase">Publicly reachable</div>
+      <div class="chips">${pub.map(d=>`<span class="chip pub">${esc(d)}</span>`).join('')}</div></div>
+    <div><div class="nrole" style="margin-bottom:6px;color:var(--dim);font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase">Access-gated (Cloudflare Access)</div>
+      <div class="chips">${gate.map(d=>`<span class="chip gate">${esc(d)}</span>`).join('')}</div></div>
+  </div>
+  <div class="lcard"><h3><span class="sw" style="background:var(--cyan)"></span> How work flows</h3>
+    <p class="flow">
+      Crew agents <span class="ar">(kirk · Scotty · Spock · McCoy · Max)</span> <span class="ar">→</span> <b>Switchboard</b> LLM proxy on HAL <span class="ar">→</span> local GPU boxes <span class="ar">(HAL · WOPR · Mac Studio · apol · DrTheopolis)</span> or metered cloud.<br>
+      Dedicated model lanes: <b>Scotty → apol</b>, <b>Hermes → WOPR</b>.<br>
+      Automation: <b>Beelink / n8n</b> orchestrates scheduled jobs across the fleet.<br>
+      Backup: <b>kirk → Yarr</b> nightly 1:1 mirror of the 112 TB irreplaceable set; cloud copy for the crown jewels.
+    </p>
+  </div>
+  <div class="lcard"><h3><span class="sw" style="background:var(--green)"></span> Storage tier</h3>
+    <p class="sub">~1 PB of primary storage across several hosts — moving from unreliable macOS external enclosures to a Linux + mergerfs pool.</p>
+    <div class="chips">
+      <span class="chip">Yarr ≈ 563 TB</span><span class="chip">kirk 224 TB (112 TB irreplaceable)</span>
+      <span class="chip">PhilFlix — media</span><span class="chip">PhilFlixBackup → Linux</span><span class="chip">20× 14 TB spare = 280 TB</span>
+    </div>
+  </div>`;
+}
+
+function openD(id){
+  const n=N.find(x=>x.id===id); if(!n)return;
+  const varc=CATVAR[n.cat]||'--slate';
+  const specs=Object.entries(n.specs||{}).map(([k,v])=>
+    `<div class="specrow"><span class="sk">${esc(k)}</span><span class="sv">${esc(v)}</span></div>`).join('');
+  const ipRow=(!PUBLIC&&n.ip)?`<div class="specrow"><span class="sk">Address</span><span class="sv">${esc(n.ip)}</span></div>`:'';
+  const lanRow=n.lan?`<div class="specrow"><span class="sk">Subnet</span><span class="sv">${n.lan==='both'?'LAN-A + LAN-B':'LAN-'+n.lan}</span></div>`:'';
+  const link=n.link?`<a class="dlink" href="${n.link}">→ Open in the LLM fleet map</a>`:'';
+  document.getElementById('dbody').innerHTML=`
+    <p class="dkick" style="color:var(${varc})">${esc(CATLBL[n.cat]||n.cat)}</p>
+    <h2>${esc(n.name)}</h2><p class="drole">${esc(n.role)}</p>
+    ${lanRow}${ipRow}${specs}
+    <p class="ddesc">${esc(n.desc||'')}</p>${link}`;
+  document.getElementById('drawer').style.setProperty('--ac','var('+varc+')');
+  document.getElementById('drawer').classList.add('on');
+  document.getElementById('drawer').setAttribute('aria-hidden','false');
+  document.getElementById('scrim').classList.add('on');
+}
+function closeD(){document.getElementById('drawer').classList.remove('on');document.getElementById('scrim').classList.remove('on');document.getElementById('drawer').setAttribute('aria-hidden','true');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeD();});
+
+function setView(v){
+  const phys=v==='phys';
+  document.getElementById('phys').style.display=phys?'':'none';
+  document.getElementById('log').style.display=phys?'none':'';
+  document.getElementById('tPhys').classList.toggle('on',phys);
+  document.getElementById('tLog').classList.toggle('on',!phys);
+}
+
+renderLegend(); renderPhysical(); renderLogical();
+</script>
+</body>
+</html>
