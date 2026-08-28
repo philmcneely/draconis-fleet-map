@@ -218,8 +218,8 @@ const N = [
   specs:{Chassis:'PowerEdge R730 · 2U',CPU:'2× Xeon E5-2630 v3 · 16c/32t · 2.4 GHz',RAM:'128 GiB',RAID:'PERC H730',PSU:'2× 1100W',Status:'not deployed yet'},desc:'Dell PowerEdge R730 — dual E5-2630 v3 (16c/32t), 128 GB, H730 RAID, redundant 1100W PSUs, rails. Not yet racked/networked; role TBD.',todo:true},
  {id:'r730b',name:'Dell R730 · 28-core',cat:'planned',lan:null,role:'Rack server (2U)',
   specs:{Chassis:'PowerEdge R730 · 2U',CPU:'2× Xeon E5-2697 v3 · 28c/56t · 2.6 GHz',RAM:'128 GiB',RAID:'PERC H730P',Status:'not deployed yet'},desc:'Dell PowerEdge R730 — dual E5-2697 v3 (28c/56t), 128 GB, H730P RAID, rails. The heftier of the two R730s. Not yet deployed; role TBD.',todo:true},
- {id:'c6145',name:'Dell C6145',cat:'planned',lan:null,role:'Multi-node AMD server',
-  specs:{Chassis:'PowerEdge C6145 · 2U',Specs:'multi-node AMD Opteron — TBD',Status:'not deployed yet'},desc:'A Dell PowerEdge C6145 (dense multi-node AMD chassis). Node count, specs, and status to be captured.',todo:true},
+ {id:'c6145',name:'Dell C6145 · 96-core',cat:'planned',lan:null,role:'Dense multi-node AMD server',
+  specs:{Chassis:'PowerEdge C6145 · 2U · 2-node',CPU:'8× AMD Opteron 6180 · 12c each = 96 cores',Status:'not deployed yet'},desc:'A Dell PowerEdge C6145 — a 2U twin-node chassis carrying eight 12-core AMD Opteron 6180s (96 cores total). Not yet deployed; a serious CPU-compute box awaiting a role.',todo:true},
  {id:'cseries',name:'Dell C-series nodes (×several)',cat:'planned',lan:null,role:'Dense compute nodes',
   specs:{Chassis:'Dell C-series (C6220 / C5xxx?)',Count:'several — TBD',Status:'not deployed yet'},desc:'Several Dell C-series dense compute nodes (exact model/count TBD — clarify from photos).',todo:true},
 
