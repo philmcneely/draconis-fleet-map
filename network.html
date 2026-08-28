@@ -355,8 +355,8 @@ function renderLegend(){
     `<span class="k"><span class="sw" style="background:var(${CATVAR[c]})"></span>${l}</span>`).join('')
     + `<span class="k"><span class="todo">•</span> needs your input</span>`;
   const live=N.filter(n=>['compute','agent','auto'].includes(n.cat)&&n.status!=='offline').length;
-  const dark=N.length-live;
-  document.getElementById('count').textContent = `${N.length} catalogued · ${live} live · ${dark} dark / reserve`;
+  const reserve=N.filter(n=>n.cat==='planned'||n.cat==='legacy'||n.status==='offline').length;
+  document.getElementById('count').textContent = `${N.length} catalogued · ${live} live & running · ${reserve} dark / reserve · rest = storage & fabric`;
 }
 
 function renderLogical(){
