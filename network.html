@@ -256,6 +256,10 @@ const N = [
   specs:{Model:'Apple A1009 Xserve RAID',Drives:'12× 500 GB = 6 TB',Controllers:'2 · Fibre Channel',Status:'legacy FC storage'},desc:'An Apple Xserve RAID (A1009) — 12× 500 GB (6 TB), dual controllers over Fibre Channel. Legacy Apple storage; needs an FC host to be usable.',todo:true},
  {id:'xserveraid2',name:'Xserve RAID (diskless)',cat:'storage',lan:null,role:'Apple Fibre Channel array (empty)',
   specs:{Model:'Apple A1009 Xserve RAID',Drives:'none — empty chassis',PSU:'2×',Status:'legacy / spare'},desc:'A second Apple Xserve RAID (A1009) chassis with dual PSUs but no drives — a spare/donor for the populated unit.',todo:true},
+ {id:'xserve1',name:'Xserve (MA822LL · 8-core)',cat:'legacy',lan:null,role:'Apple Xserve 1U server',
+  specs:{Model:'Apple Xserve MA822LL',CPU:'2× 3.0 GHz Quad Xeon · 8 cores',RAM:'32 GiB',Disk:'2× 74 GB + 1 TB',Status:'legacy 1U'},desc:'An Apple Xserve 1U rack server (MA822LL) — 8 cores, 32 GB RAM. Legacy Apple server hardware; role/on-network TBD.',todo:true},
+ {id:'xserve2',name:'Xserve (2008 · diskless)',cat:'legacy',lan:null,role:'Apple Xserve 1U server',
+  specs:{Model:'Apple Xserve (early 2008)',CPU:'3.0 GHz · 8-core',RAM:'8 GiB (4× 2 GB)',Disk:'none',Status:'legacy / spare'},desc:'A 2008 Apple Xserve 1U, 8-core, 8 GB, no drives — a spare/donor unit.',todo:true},
 ];
 
 // ---- network gear / fabric ----
