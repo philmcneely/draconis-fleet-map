@@ -254,8 +254,8 @@ const N = [
   specs:{Type:'LSI Lynx3090',Ports:'36× SAS',Status:'storage fabric — in rack'},desc:'An LSI Lynx3090 SAS switch — a storage-fabric switch that fans SAS out to the disk shelves/JBODs in the rack, not an Ethernet device.',todo:true},
 
  // --- RACK STORAGE (from photos) ---
- {id:'tl2000',name:'PowerVault TL2000',cat:'storage',lan:null,role:'Tape library (backup)',
-  specs:{Type:'Dell PowerVault TL2000',Media:'LTO tape',Status:'in rack — status TBD'},desc:'A Dell PowerVault TL2000 tape library in the rack — an offline/near-line backup tier. Confirm whether it’s live and what it backs up.',todo:true},
+ {id:'tl2000',name:'PowerVault TL2000 ×2 (LTO-6)',cat:'storage',lan:null,role:'Tape libraries (backup)',
+  specs:{Type:'Dell PowerVault TL2000 · ×2',Drive:'LTO-6 SAS (Ultrium L6)',Capacity:'2.5 TB native / 6.25 TB compressed per tape',Media:'~38 LTO-6 tapes (22 + 16) ≈ 95 TB native',Status:'in rack — status TBD'},desc:'Two Dell PowerVault TL2000 LTO-6 SAS tape libraries with ~38 LTO-6 tapes between them (~95 TB native, ~240 TB compressed) — a proper offline/near-line backup tier. Confirm whether live and what they back up.',todo:true},
  {id:'jbods',name:'JBOD disk shelves (×several)',cat:'storage',lan:null,role:'SAS/direct-attach disk shelves',
   specs:{Type:'Dell PowerVault + JBOD arrays',Count:'several (16-bay, 12-bay, 24×2.5", large 4-col)',Status:'attach to a host — TBD'},desc:'The rack holds several disk shelves/JBODs (16-bay, 12-bay, 24×2.5", and large 4-column arrays), fanned out over the LSI SAS switch. Which host(s) they attach to and total capacity: to be captured.',todo:true},
  {id:'md1000',name:'PowerVault MD1000',cat:'storage',lan:null,role:'15-bay SAS disk shelf (3U)',
