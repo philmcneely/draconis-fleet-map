@@ -220,8 +220,14 @@ const N = [
   specs:{Chassis:'PowerEdge R730 · 2U',CPU:'2× Xeon E5-2697 v3 · 28c/56t · 2.6 GHz',RAM:'128 GiB',RAID:'PERC H730P',Status:'not deployed yet'},desc:'Dell PowerEdge R730 — dual E5-2697 v3 (28c/56t), 128 GB, H730P RAID, rails. The heftier of the two R730s. Not yet deployed; role TBD.',todo:true},
  {id:'c6145',name:'Dell C6145 · 96-core',cat:'planned',lan:null,role:'Dense multi-node AMD server',
   specs:{Chassis:'PowerEdge C6145 · 2U · 2-node',CPU:'8× AMD Opteron 6180 · 12c each = 96 cores',Status:'not deployed yet'},desc:'A Dell PowerEdge C6145 — a 2U twin-node chassis carrying eight 12-core AMD Opteron 6180s (96 cores total). Not yet deployed; a serious CPU-compute box awaiting a role.',todo:true},
- {id:'cseries',name:'Dell C-series nodes (×several)',cat:'planned',lan:null,role:'Dense compute nodes',
-  specs:{Chassis:'Dell C-series (C6220 / C5xxx?)',Count:'several — TBD',Status:'not deployed yet'},desc:'Several Dell C-series dense compute nodes (exact model/count TBD — clarify from photos).',todo:true},
+ {id:'c1100',name:'Dell C1100',cat:'planned',lan:null,role:'1U server',
+  specs:{Chassis:'PowerEdge C1100 · 1U',CPU:'2× Xeon L5520 · 8c · 2.26 GHz',RAM:'72 GiB',Bays:'4× HDD',Status:'not deployed yet'},desc:'A Dell PowerEdge C1100 (1U) — dual L5520 (8 cores), 72 GB RAM, 4 drive bays. Not yet deployed.',todo:true},
+ {id:'c6100ty3',name:'Dell C6100 XS23-TY3 ×2',cat:'planned',lan:null,role:'2U twin — 4 nodes each',
+  specs:{Chassis:'PowerEdge C6100 XS23-TY3 · 2U · 4 nodes',Count:'×2 chassis = 8 nodes',CPU:'8× Xeon L5520 · 2.26 GHz per chassis',RAM:'96 GiB per chassis',Disk:'4× 250 GB per chassis',Status:'not deployed yet'},desc:'Two Dell PowerEdge C6100 (XS23-TY3) chassis — each a 2U four-node sled with 8× L5520 and 96 GB. Eight compute nodes across the pair. Not yet deployed.',todo:true},
+ {id:'c6100sb',name:'Dell C6100 XS23-SB',cat:'planned',lan:null,role:'2U — 4 nodes',
+  specs:{Chassis:'PowerEdge C6100 XS23-SB · 2U · 4 nodes',CPU:'8× Xeon L5420',RAM:'32 GiB',Extras:'rail kit',Status:'not deployed yet'},desc:'A Dell PowerEdge C6100 (XS23-SB) — a 2U four-node chassis with 8× L5420 and 32 GB. Not yet deployed.',todo:true},
+ {id:'c6100bare',name:'Dell C6100 (3.5" barebones) ×2',cat:'planned',lan:null,role:'2U barebones chassis',
+  specs:{Chassis:'PowerEdge C6100 · 2U · 3.5"',Count:'×2 barebones + 16 drive trays',Status:'barebones — needs CPUs/RAM/disks'},desc:'Two barebones C6100 3.5" chassis plus 16 drive trays — spare/expansion frames to populate. Brings the C6100 total to 5 chassis (2× TY3, 1× SB, 2× barebones).',todo:true},
 
  // --- LEGACY / UNKNOWN ---
  {id:'oldmacpro',name:'Old Mac Pro (256 GB)',cat:'legacy',lan:null,role:'Classic Mac Pro tower',
