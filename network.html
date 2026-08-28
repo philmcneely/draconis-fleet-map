@@ -127,6 +127,7 @@
   <section id="phys">
     <div class="fabric" id="fabric"></div>
     <div class="lanes" id="lanes"></div>
+    <div class="tray" id="trayFabric"></div>
     <div class="tray" id="trayPlanned"></div>
     <div class="tray" id="trayLegacy"></div>
   </section>
@@ -223,10 +224,30 @@ const N = [
   specs:{Chassis:'Dell C-series (C6220 / C5xxx?)',Count:'several — TBD',Status:'not deployed yet'},desc:'Several Dell C-series dense compute nodes (exact model/count TBD — clarify from photos).',todo:true},
 
  // --- LEGACY / UNKNOWN ---
- {id:'oldmacpro',name:'Old Mac Pro',cat:'legacy',lan:null,role:'Legacy tower',
-  specs:{Status:'details TBD'},desc:'The earlier Mac Pro (distinct from kirk/TheMacPro). Role, specs, and status still to be captured.',todo:true},
- {id:'stormtrooper',name:'Stormtrooper',cat:'legacy',lan:null,role:'Legacy / role TBD',
-  specs:{Status:'details TBD'},desc:'“Stormtrooper” — box details to be captured (role, specs, on-network status).',todo:true},
+ {id:'oldmacpro',name:'Old Mac Pro (256 GB)',cat:'legacy',lan:null,role:'Classic Mac Pro tower',
+  specs:{Host:'Mac Pro 5,1 · 2× 3.46 GHz Xeon',RAM:'256 GiB',GPU:'Radeon RX 580',Status:'role/on-network TBD'},desc:'A classic dual-Xeon Mac Pro (5,1) — 2× 3.46 GHz, 256 GB RAM, RX 580. Distinct from kirk/TheMacPro. Role and on-network status to be assigned.',todo:true},
+ {id:'oldmacpro2',name:'Old Mac Pro (128 GB)',cat:'legacy',lan:null,role:'Classic Mac Pro tower',
+  specs:{Host:'Mac Pro 5,1 · 2× Xeon',RAM:'128 GiB',Status:'role/on-network TBD'},desc:'A second, similar classic dual-Xeon Mac Pro (5,1) with 128 GB RAM. Role and on-network status to be assigned.',todo:true},
+ {id:'stormtrooper',name:'Stormtrooper',cat:'legacy',lan:null,role:'Windows box (ex-Hackintosh)',
+  specs:{CPU:'Intel i7 (4th-gen Haswell)',RAM:'32–64 GiB',GPU:'2× GTX 690 (SLI)',OS:'Windows',Status:'specs approx — confirm'},desc:'Phil’s Windows machine, formerly a Hackintosh — Haswell i7, 32–64 GB RAM, two GTX 690s in SLI. Specs are from memory; confirm against the build post.',todo:true},
+ {id:'googlemini',name:'Google Mini',cat:'legacy',lan:null,role:'Google Search Appliance (1U)',
+  specs:{Chassis:'Dell 1U (Google-branded)',Status:'legacy / novelty'},desc:'A Google Mini search appliance (rebranded Dell 1U) spotted in the rack — legacy hardware, kept as a curio.',todo:true},
+
+ // --- NETWORK FABRIC & RACK GEAR ---
+ {id:'qhora',name:'Qhora router',cat:'gear',lan:'A',role:'Edge router · WAN 1',
+  specs:{Role:'LAN-A gateway',WAN:'ISP #1'},desc:'The primary edge router — gateway for LAN-A and one of the two ISP uplinks.'},
+ {id:'deco',name:'Deco mesh',cat:'gear',lan:'B',role:'Mesh router · WAN 2',
+  specs:{Role:'LAN-B gateway',WAN:'ISP #2'},desc:'The mesh router — gateway for LAN-B and the second ISP uplink. Bridges to LAN-A via the known hairpin path.'},
+ {id:'netgear',name:'NETGEAR switch',cat:'gear',lan:null,role:'Managed switch (~24-port + SFP)',
+  specs:{Type:'NETGEAR ProSafe-class managed switch',Ports:'~24× 1GbE + SFP uplinks',Status:'in rack — subnet TBD'},desc:'A NETGEAR ~24-port managed switch seen in the rack — the wired backbone for the rack gear. Which subnet(s) it trunks: confirm.',todo:true},
+ {id:'lsisas',name:'LSI Lynx3090 SAS switch',cat:'gear',lan:null,role:'SAS storage fabric switch (36-port)',
+  specs:{Type:'LSI Lynx3090',Ports:'36× SAS',Status:'storage fabric — in rack'},desc:'An LSI Lynx3090 SAS switch — a storage-fabric switch that fans SAS out to the disk shelves/JBODs in the rack, not an Ethernet device.',todo:true},
+
+ // --- RACK STORAGE (from photos) ---
+ {id:'tl2000',name:'PowerVault TL2000',cat:'storage',lan:null,role:'Tape library (backup)',
+  specs:{Type:'Dell PowerVault TL2000',Media:'LTO tape',Status:'in rack — status TBD'},desc:'A Dell PowerVault TL2000 tape library in the rack — an offline/near-line backup tier. Confirm whether it’s live and what it backs up.',todo:true},
+ {id:'jbods',name:'JBOD disk shelves (×several)',cat:'storage',lan:null,role:'SAS/direct-attach disk shelves',
+  specs:{Type:'Dell PowerVault + JBOD arrays',Count:'several (16-bay, 12-bay, 24×2.5", large 4-col)',Status:'attach to a host — TBD'},desc:'The rack holds several disk shelves/JBODs (16-bay, 12-bay, 24×2.5", and large 4-column arrays), fanned out over the LSI SAS switch. Which host(s) they attach to and total capacity: to be captured.',todo:true},
 ];
 
 // ---- network gear / fabric ----
@@ -279,7 +300,7 @@ function renderPhysical(){
   const order=['compute','storage','auto','agent'];
   const laneHTML=lan=>{
     const g=GEAR[lan];
-    const list=N.filter(n=>n.lan===lan||(lan==='A'&&n.lan==='both'));
+    const list=N.filter(n=>(n.lan===lan||(lan==='A'&&n.lan==='both'))&&n.cat!=='gear');
     list.sort((a,b)=>order.indexOf(a.cat)-order.indexOf(b.cat));
     return `<div class="lane"><div class="lanehead">
         <div class="nm">${esc(g.name)} <span class="wan">${esc(g.wan)}</span></div>
@@ -287,6 +308,10 @@ function renderPhysical(){
       </div><div class="nodes">${list.map(nodeCard).join('')}</div></div>`;
   };
   document.getElementById('lanes').innerHTML = laneHTML('A')+laneHTML('B');
+  // network fabric & rack gear (switches, SAS fabric, tape, JBODs — subnet-less rack items)
+  const fabric=N.filter(n=>n.cat==='gear'||(n.lan===null&&n.cat==='storage'));
+  document.getElementById('trayFabric').innerHTML =
+    `<h3>Network fabric &amp; rack gear</h3><div class="traygrid">${fabric.map(nodeCard).join('')}</div>`;
   // planned tray
   const planned=N.filter(n=>n.cat==='planned');
   document.getElementById('trayPlanned').innerHTML =
