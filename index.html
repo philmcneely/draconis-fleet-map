@@ -1,0 +1,455 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Draconis Fleet — LLM Map</title></head><body><title>Fleet LLM Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#0b0f12; --bg2:#0f151a; --card:#151b21; --card2:#1a222a;
+    --rail:#25303a; --rail2:#313e49;
+    --ink:#d9e3e9; --mut:#7e8f9a; --dim:#526270;
+    --ok:#3fb950; --warn:#d29922; --hot:#e5484d;
+    --vllm:#7b8cff; --ollama:#4fd0c8; --svc:#c98bdb; --llama:#f0a868; --cloud:#f0a868;
+    --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+    --sans:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+    --accent:#e5484d;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.4;padding:clamp(14px,2.6vw,36px);
+    background-image:radial-gradient(1100px 520px at 82% -12%,#16202799,transparent)}
+  .wrap{max-width:1180px;margin:0 auto}
+  a{color:inherit}
+  .section-label{font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:var(--dim);margin:0 0 11px;font-weight:600}
+
+  .topbar{display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+  .topbar h1{font-size:19px;margin:0;font-weight:700;letter-spacing:.4px}
+  .topbar .sub{font-family:var(--mono);font-size:12px;color:var(--mut)}
+  .crumb{font-family:var(--mono);font-size:12.5px;color:var(--mut)}
+  .crumb button{font:inherit;color:var(--ink);background:none;border:none;cursor:pointer;padding:0;border-bottom:1px dotted var(--rail2)}
+  .crumb button:hover{color:#fff}
+  .back{margin-left:auto}
+
+  .tabs{display:flex;gap:6px;margin-bottom:22px;border-bottom:1px solid var(--rail);flex-wrap:wrap}
+  .tab{font:inherit;font-size:13px;color:var(--mut);background:none;border:none;border-bottom:2px solid transparent;padding:8px 14px 10px;cursor:pointer;letter-spacing:.3px}
+  .tab:hover{color:var(--ink)}
+  .tab.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+  .tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+  /* aggregate */
+  .agg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+  @media(max-width:760px){.agg{grid-template-columns:repeat(2,1fr)}}
+  .stat{border:1px solid var(--rail);border-radius:11px;background:linear-gradient(180deg,var(--bg2),var(--bg));padding:15px 16px}
+  .stat .k{font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim)}
+  .stat .v{font-family:var(--mono);font-size:24px;font-weight:600;margin-top:7px;font-variant-numeric:tabular-nums}
+  .stat .v small{font-size:13px;color:var(--mut);font-weight:400}
+  .stat.free .v{color:var(--ok)}
+  .stat .note{font-family:var(--mono);font-size:10.5px;color:var(--mut);margin-top:5px}
+
+  /* overview: full machine blocks — each shows its GPU boxes + models inline */
+  .mblock{border:1px solid var(--rail);border-top:3px solid var(--mc);border-radius:13px;background:linear-gradient(180deg,var(--bg2),var(--bg));margin-bottom:16px;overflow:hidden}
+  .mbhead{display:flex;align-items:center;gap:11px;padding:13px 17px;border-bottom:1px solid var(--rail);cursor:pointer;background:#12191f}
+  .mbhead:hover{background:#17212a}
+  .mbhead:focus-visible{outline:2px solid var(--mc);outline-offset:-2px}
+  .dot{width:12px;height:12px;border-radius:50%;background:var(--mc);box-shadow:0 0 12px 1px var(--mc);flex:none}
+  .mbhead .nm{font-size:16px;font-weight:700;letter-spacing:.3px}
+  .mbhead .hw{font-family:var(--mono);font-size:11px;color:var(--mut)}
+  .mbhead .mbstats{font-family:var(--mono);font-size:11px;color:var(--mut);margin-left:auto;text-align:right}
+  .mbhead .mbstats b{color:var(--ink);font-weight:600} .mbhead .mbstats .fr{color:var(--ok)}
+  .mbhead .zoom{font-family:var(--mono);font-size:11px;color:var(--mc);border:1px solid var(--mc);border-radius:6px;padding:3px 10px;flex:none;opacity:.85}
+  .mbhead:hover .zoom{opacity:1}
+  .mblock .units{padding:16px 17px}
+
+  /* machine detail */
+  .chassis{border:1px solid var(--rail);border-radius:14px;background:linear-gradient(180deg,var(--bg2),var(--bg));box-shadow:0 30px 80px -46px #000;overflow:hidden}
+  .mhead{display:flex;flex-wrap:wrap;align-items:center;gap:18px;padding:20px 24px;border-bottom:1px solid var(--rail);background:linear-gradient(180deg,#12191f,#0f151a)}
+  .eye{width:24px;height:24px;border-radius:50%;flex:none;background:radial-gradient(circle at 50% 45%,#fff6 0 10%,var(--accent) 32%,#0006 90%);box-shadow:0 0 0 1px #000,0 0 16px 2px var(--accent);animation:pulse 3.2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{filter:brightness(.9)}50%{filter:brightness(1.15)}}
+  @media(prefers-reduced-motion:reduce){.eye{animation:none}}
+  .mname{font-size:25px;font-weight:700;letter-spacing:.5px;margin:0;line-height:1}
+  .msub{font-family:var(--mono);font-size:12.5px;color:var(--mut);margin-top:5px}
+  .mrole{margin-left:auto;text-align:right}
+  .mrole .tag{display:inline-block;font-size:11px;text-transform:uppercase;letter-spacing:1.3px;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:4px 11px;opacity:.9}
+  .mrole .totals{font-family:var(--mono);font-size:12.5px;color:var(--mut);margin-top:8px}
+  .mrole b{color:var(--ink);font-weight:600}
+
+  .proxbar{padding:16px 24px;border-bottom:1px solid var(--rail);background:#0e141980}
+  .proxies{display:flex;flex-wrap:wrap;gap:10px}
+  .prox{flex:1 1 190px;min-width:180px;border:1px solid var(--rail2);border-radius:9px;background:linear-gradient(180deg,#171f26,#131a20);padding:11px 13px}
+  .prox .top{display:flex;align-items:baseline;gap:8px}
+  .prox .pname{font-weight:600;font-size:13.5px}
+  .prox .port{font-family:var(--mono);font-size:12px;color:var(--accent);margin-left:auto}
+  .prox .route{font-family:var(--mono);font-size:11.5px;color:var(--mut);margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .arrow{color:var(--dim)}
+  .be{font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:1.5px 6px;border-radius:5px;font-weight:600}
+  .be.vllm{color:var(--vllm);background:#7b8cff18;border:1px solid #7b8cff40}
+  .be.ollama{color:var(--ollama);background:#4fd0c818;border:1px solid #4fd0c840}
+  .be.cloud{color:var(--cloud);background:#f0a86818;border:1px solid #f0a86840}
+  .be.chain{color:var(--svc);background:#c98bdb18;border:1px solid #c98bdb40}
+  .be.llama{color:var(--llama);background:#f0a86818;border:1px solid #f0a86840}
+  .prox .flags{margin-top:8px;display:flex;gap:5px;flex-wrap:wrap;min-height:6px}
+  .pill{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:4px;border:1px solid var(--rail2);color:var(--mut)}
+
+  .gpubar{padding:20px 24px 24px}
+  .units{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:860px){.units{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:540px){.units{grid-template-columns:1fr}}
+  .unit.span{grid-column:span 2}
+  @media(max-width:540px){.unit.span{grid-column:span 1}}
+  .gpu{border:1px solid var(--rail);border-radius:11px;background:var(--card);padding:13px;display:flex;flex-direction:column;gap:11px;min-height:148px;height:100%}
+  .gpu.idle{opacity:.66;background:#11171c;border-style:dashed}
+  .gpu.burst{background:#141017;border:1px dashed var(--warn)}
+  .gpu.warncard{border:1px solid var(--hot)}
+  .ghead{display:flex;align-items:center;gap:9px}
+  .gidx{font-family:var(--mono);font-weight:600;font-size:12px;color:var(--ink);background:#0c1013;border:1px solid var(--rail2);border-radius:6px;padding:2px 8px}
+  .gname{font-size:12.5px;font-weight:600}
+  .gvram{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums}
+  .bar{height:6px;border-radius:99px;background:#0b0f12;border:1px solid #000;overflow:hidden}
+  .bar>span{display:block;height:100%;border-radius:99px}
+  .fill-ok{background:linear-gradient(90deg,#2f8f3e,var(--ok))}
+  .fill-warn{background:linear-gradient(90deg,#a97913,var(--warn))}
+  .fill-hot{background:linear-gradient(90deg,#a5322d,var(--hot))}
+  .chips{display:flex;flex-direction:column;gap:8px}
+  .chip{border:1px solid var(--rail2);border-left:3px solid var(--vllm);border-radius:8px;background:linear-gradient(180deg,#1b232b,#161d24);padding:9px 11px}
+  .chip.ollama{border-left-color:var(--ollama)} .chip.svc{border-left-color:var(--svc)} .chip.llama{border-left-color:var(--llama)}
+  .chip .cname{font-weight:600;font-size:13px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .chip .cname .b{font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);border:1px solid var(--rail2);border-radius:4px;padding:0 5px;font-weight:600}
+  .chip .cname .ab{color:var(--svc);border-color:#c98bdb55}
+  .chip .data{font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:6px;display:flex;flex-wrap:wrap;gap:4px 12px}
+  .chip .data b{color:var(--ink);font-weight:500} .chip .data .k{color:var(--dim)}
+  .free{margin:auto;color:var(--dim);font-family:var(--mono);font-size:12px;letter-spacing:1px}
+  .burstlabel{margin:auto;text-align:center;color:var(--warn);font-family:var(--mono);font-size:11px}
+  .burstlabel small{display:block;color:var(--mut);letter-spacing:0;margin-top:3px;font-size:10px}
+  .spanhead{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;border:1px solid var(--rail2);border-left:3px solid var(--llama);border-radius:8px;background:linear-gradient(180deg,#211d17,#181510);padding:9px 11px;margin-bottom:-4px;flex-wrap:wrap}
+  .spanhead .b{font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);border:1px solid var(--rail2);border-radius:4px;padding:0 5px}
+  .spanhead .data{font-family:var(--mono);font-size:10.5px;color:var(--mut);margin-left:auto;font-weight:400}
+  .bridge{text-align:center;color:var(--llama);font-family:var(--mono);font-size:14px;line-height:.6;margin:2px 0 -2px}
+  .spanmembers{display:flex;gap:10px}
+  .spanmembers .gpu{flex:1;min-height:auto;background:#12181e}
+  .spanmembers .gpu .chips,.spanmembers .gpu .free{display:none}
+
+  /* cloud + agents */
+  .grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  .ccard{border:1px solid var(--rail);border-left:3px solid var(--cloud);border-radius:11px;background:var(--card);padding:15px 17px}
+  .ccard.off{opacity:.55;border-left-color:var(--dim)}
+  .ccard .ct{display:flex;align-items:center;gap:9px;margin-bottom:4px}
+  .ccard .cn{font-size:15px;font-weight:700}
+  .status{margin-left:auto;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:2px 8px;border-radius:99px}
+  .status.on{color:var(--ok);border:1px solid #3fb95055;background:#3fb9500f}
+  .status.no{color:var(--dim);border:1px solid var(--rail2)}
+  .ccard .use{font-size:12px;color:var(--mut);margin:2px 0 10px}
+  .ccard .ml{font-family:var(--mono);font-size:11px;color:var(--ink);display:flex;flex-wrap:wrap;gap:5px}
+  .ccard .ml span{background:#0c1013;border:1px solid var(--rail2);border-radius:5px;padding:1.5px 7px;color:var(--mut)}
+  .acard{border:1px solid var(--rail);border-left:3px solid var(--vllm);border-radius:11px;background:var(--card);padding:15px 17px}
+  .acard .an{font-size:15px;font-weight:700;display:flex;align-items:center;gap:9px}
+  .acard .ah{font-family:var(--mono);font-size:10.5px;color:var(--dim);margin-left:auto}
+  .acard .ar{font-size:12px;color:var(--mut);margin:3px 0 9px}
+  .acard .pts{font-family:var(--mono);font-size:11.5px;color:var(--ink);display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+  .acard .pts .k{color:var(--dim);flex:none}
+  .acard .pts b{color:var(--llama);font-weight:600}
+
+  .legend{margin-top:16px;border:1px solid var(--rail);border-radius:11px;background:#0f151a;padding:14px 18px}
+  .legend .row{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;font-size:11.5px;color:var(--mut)}
+  .legend .item{display:flex;align-items:center;gap:7px} .sw{width:20px;height:8px;border-radius:99px}
+  .swbox{width:16px;height:12px;border-radius:3px;border:1px dashed var(--warn)}
+  .foot{color:var(--dim);font-size:11px;font-family:var(--mono);margin-top:18px;text-align:center}
+  .hide{display:none}
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <h1 id="crumbTitle">Fleet LLM Map</h1>
+    <span class="sub" id="crumbSub">compute · cloud · agents</span>
+    <div class="crumb back hide" id="backwrap"><button id="backbtn">← all machines</button></div>
+  </div>
+  <nav class="tabs">
+    <button class="tab on" data-view="compute">▚ Compute</button>
+    <button class="tab" data-view="cloud">☁ Cloud subscriptions</button>
+    <button class="tab" data-view="agents">◇ Agents</button>
+  </nav>
+
+  <div id="view-compute"><div id="overview"></div><div id="detail" class="hide"></div></div>
+  <div id="view-cloud" class="hide"></div>
+  <div id="view-agents" class="hide"></div>
+
+  <p class="foot">local snapshot 2026-08-28 · self-hosted models on our own hardware + metered cloud fallbacks · hover a machine for its models, click to drill in</p>
+</div>
+
+<script>
+const esc = s => String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+const FLEET = [
+  { id:'hal9000', name:'HAL9000', mc:'#e5484d', hw:'6 × RTX 3090 · 144 GB', vendor:'nvidia',
+    total:144, role:'Central inference · Switchboard hub',
+    proxies:[
+      {name:'openwebui-vllm',port:'',be:'vllm',route:'local · qwen3.8-27b'},
+      {name:'openwebui-ollama',port:'',be:'ollama',route:'local · gemma3:4b'},
+      {name:'openwebui-boss',port:'',be:'chain',route:'→ macstudio · deepseek-v4-flash',flags:['via Switchboard chain']},
+      {name:'openwebui',port:'',be:'cloud',route:'OpenRouter passthrough'},
+      {name:'karakuri',port:'karakuri',be:'vllm',route:'Karakuri software factory'},
+    ],
+    gpus:[
+      {idx:0,name:'RTX 3090',total:24,used:8.4,note:'Whisper pinned here',chips:[
+        {name:'Whisper STT',type:'svc',b:'service · pinned',data:{vram:'8.1 GB',role:'speech→text'}},
+        {name:'ComfyUI',type:'svc',b:'service · idle',data:{vram:'0.25 GB',role:'image / Flux'}}]},
+      {idx:1,name:'RTX 3090',total:24,used:0,burst:'VibeVoice'},
+      {idx:2,name:'RTX 3090',total:24,used:23.5,chips:[
+        {name:'Qwen3.8-27B',type:'vllm',b:'vLLM',data:{vram:'23.5 GB',quant:'W4A16',ctx:'100k',kv:'fp8'}}]},
+      {idx:3,name:'RTX 3090',total:24,used:0,burst:'VibeVoice'},
+      {idx:4,name:'RTX 3090',total:24,used:0,burst:'VibeVoice'},
+      {idx:5,name:'RTX 3090',total:24,used:7.8,chips:[
+        {name:'gemma3:4b',type:'ollama',b:'ollama',data:{vram:'7.8 GB',quant:'Q4_K_M',ctx:'131k'}}]},
+    ]},
+
+  { id:'wopr', name:'WOPR', mc:'#3fb950', hw:'7 × MI50 32GB · gfx906', vendor:'amd',
+    total:224, role:'Big dense-model + MoE inference',
+    proxies:[{name:'wopr-proxy',port:'',be:'llama',route:'fronts local llama.cpp tenants → Switchboard'}],
+    spans:[
+      {members:[0,1],name:'Qwen3.6-35B-A3B',type:'llama',data:{quant:'Q8_0',ctx:'40k',split:'tensor-split ×2'}},
+      {members:[2,3],name:'gpt-oss-120b',type:'llama',data:{quant:'MoE GGUF',ctx:'8k',split:'tensor-split ×2'}},
+    ],
+    gpus:[
+      {idx:0,name:'MI50 32GB',total:32,used:18.9},
+      {idx:1,name:'MI50 32GB',total:32,used:17.7},
+      {idx:2,name:'MI50 32GB',total:32,used:32.1},
+      {idx:3,name:'MI50 32GB',total:32,used:29.4},
+      {idx:4,name:'MI50 32GB',total:32,used:24.0,chips:[
+        {name:'nemotron-3.5',type:'llama',b:'llama.cpp',data:{vram:'24.0 GB',ctx:'40k'}}]},
+      {idx:5,name:'MI50 32GB',total:32,used:21.0,chips:[
+        {name:'Qwen3.6-27B-MTP',type:'llama',b:'llama.cpp',data:{vram:'21.0 GB',quant:'IQ4_XS',ctx:'160k'}}]},
+      {idx:6,name:'MI50 32GB · reseated',total:32,used:17,note:'card repaired 2026-08-27 — now serving Muse-Glimmer, validated under load',chips:[
+        {name:'Muse-Glimmer-30B',type:'llama',b:'llama.cpp',data:{vram:'≈17 GB',quant:'Q4_K_M',ctx:'40k',serves:'Hermes agents'}}]},
+    ]},
+
+  { id:'macstudio', name:'macstudio', mc:'#5b9dd9', hw:'Apple M-series · 256 GB unified', vendor:'apple',
+    total:256, role:'Apple-silicon inference · ollama-cloud origin',
+    proxies:[{name:'macstudio-proxy',port:'',be:'llama',route:'local · deepseek-v4-flash'}],
+    gpus:[
+      {idx:0,name:'Apple unified memory',total:256,used:256,unified:true,committed:true,
+        note:'single GPU — one large model max. ~145 GB darkstar weights + the rest reserved for KV/context. No deployable headroom.',chips:[
+        {name:'DeepSeek V4 Flash',type:'llama',b:'ds4-server',data:{footprint:'≈145 GB weights + ctx',quant:'MXFP4',ctx:'1M — KV spills to a 16 GB disk cache',serves:'deepseek-v4-flash / -pro'}},
+        {name:'ollama-cloud origin',type:'ollama',b:'signed-in · remote weights · 0 VRAM',data:{'cloud models':'gemma4:31b · glm-5.2 · minimax-m3 · deepseek-v4-pro · qwen3.5 · qwen3.5:397b · minimax-m2.5 · kimi-k2.5 · gpt-oss:120b'}}]},
+    ]},
+
+  { id:'apol', name:'apol', mc:'#22b8cf', hw:'2 × Radeon VII 16GB · T2 Linux', vendor:'amd',
+    total:32, role:'Dual Radeon VII eGPU inference',
+    proxies:[{name:'llama-server ×2',port:'/',be:'llama.cpp',route:'per-card llama-server (mixa3607/gfx906) — one dedicated model per agent'}],
+    gpus:[
+      {idx:0,name:'Radeon VII 16GB',total:16,used:14.9,chips:[
+        {name:'Qwen3.8-27B',type:'llama',b:'card0 · llama-server',data:{vram:'≈14.9 GB',quant:'IQ4_XS',ctx:'8k',serves:'free (next crew agent)'}}]},
+      {idx:1,name:'Radeon VII 16GB',total:16,used:14.9,chips:[
+        {name:'Qwen3.8-27B',type:'llama',b:'card1 · llama-server',data:{vram:'≈14.9 GB',quant:'IQ4_XS',ctx:'8k',serves:'Scotty (dedicated)'}}]},
+    ]},
+
+  { id:'drtheopolis', name:'DrTheopolis', mc:'#a371f7', hw:'2 × RX 6800 · macOS · ToshLLM', vendor:'amd',
+    total:32, role:'Abliterated pair · Metal inference',
+    proxies:[{name:'drtheo-proxy',port:'',be:'llama',route:'fronts 2 local ToshLLM instances'}],
+    gpus:[
+      {idx:0,name:'RX 6800 16GB',total:16,used:14,chips:[
+        {name:'Qwen3.8-27B',type:'llama',b:'instance A · ToshLLM (Metal)',data:{vram:'≈14 GB',quant:'UD-IQ4_XS',ctx:'4k',build:'stock'}}]},
+      {idx:1,name:'RX 6800 16GB',total:16,used:14,chips:[
+        {name:'Qwen3.8-27B',ab:true,type:'llama',b:'instance B · ToshLLM (Metal)',data:{vram:'≈14 GB',quant:'IQ4_XS',ctx:'4k',build:'Heretic · abliterated'}}]},
+    ]},
+];
+
+const CLOUD = [
+  {name:'Anthropic — Claude Max',on:true,use:'Coding, crew agents, chat floor (instrumented via transcripts)',models:['Claude Opus','Sonnet','Haiku']},
+  {name:'OpenRouter',on:true,use:'Metered passthrough — complex-tier fallback & OpenWebUI',models:['nemotron-3-super-120b (free)','deepseek-v4-flash','any model verbatim']},
+  {name:'Google AI Studio (Gemini, free)',on:true,use:'Free high-volume standard tier + podcasts',models:['gemini-2.5-flash']},
+  {name:'Google AI Pro (Gemini, paid)',on:true,use:'NotebookLM · Gemini app · higher-limit Gemini',models:['gemini-2.5-pro','notebooklm']},
+  {name:'Groq',on:true,use:'Fast simple/standard tiers (free ceiling)',models:['gpt-oss-120b','llama-3.3-70b-versatile']},
+  {name:'Ollama Cloud (Pro)',on:true,use:'Zero-retention cloud · macstudio gateway · qwen3.5 workhorse + free -cloud models (gpt-oss, gemma4, nemotron)',models:['qwen3.5:397b','minimax-m3','glm-5.2','deepseek-v4-pro','gpt-oss:120b (not pulled)']},
+  {name:'PGSGrove (Phoenix Grove)',on:true,use:'Paid OpenAI-compatible provider (api.pgsgrove.com) · the escalation tier · minimax-m3 + open models',models:['minimax-m3 (lead)','qwen-3.8-27b','qwen-3.8-2.4t','deepseek-v4-pro','glm-5.2','kimi-k3','nemotron-3-ultra','mimo-v2.5-pro']},
+  {name:'GitHub Copilot',on:true,use:'IDE coding assist',models:['Copilot']},
+  {name:'ElevenLabs',on:true,use:'Voice chain — speech-to-speech / TTS',models:['TTS voices']},
+  {name:'Perplexity',on:true,use:'Research & web search (MCP)',models:['sonar']},
+  {name:'z.ai',on:true,use:'Lane: GLM-heavy tasks / a GLM-persona agent',models:['GLM-4.6','GLM-5.2']},
+  {name:'Abacus.AI',on:true,use:'Lane: human deep-research / agent console (DeepAgent)',models:['routes to GPT / Claude / Gemini / DeepSeek / …']},
+  {name:'OpenCode',on:true,use:'Lane: free coding agent on LOCAL models (WOPR / apol)',models:['multi-model → local']},
+  {name:'Cline Pass',on:true,use:'Lane: IDE agentic coding (VS Code)',models:['multi-model']},
+  {name:'NanoGPT',on:true,use:'Lane: cheapest bulk / background jobs',models:['many open + frontier models']},
+];
+
+const AGENTS = [
+  {name:'Kirk',host:'TheMacPro',role:'Crew lead · QA gate + plan approval · Telegram',points:'cloud-plan tier (auto)'},
+  {name:'Scotty',host:'crew node',role:'Execute · QA · architect · Telegram',points:'DEDICATED: Qwen3.8-27B on apol card1 ( llama-server) — escalation path TBD'},
+  {name:'Spock',host:'crew node',role:'Execute · QA · research · Telegram',points:'"standard" tier — local qwen + gemini-2.5-flash'},
+  {name:'McCoy',host:'crew node',role:'Execute · QA · diagnostics · Telegram',points:'"standard" tier — local qwen + gemini-2.5-flash'},
+  {name:'Maximilian',host:'max · Hermes',role:'Execute · QA · Telegram assistant',points:'Muse-Glimmer-30B — served from WOPR GPU6'},
+  {name:'Vincent',host:'max · Hermes',role:'Telegram assistant',points:'Muse-Glimmer-30B — served from WOPR GPU6'},
+  {name:'Sulu',host:'kirk (local)',role:'Utility agent · Telegram',points:'target: paid Gemini — wiring unverified (needs a fix)'},
+];
+
+// Karakuri is NOT a standing agent — it's the autonomous software factory (orchestrator)
+// that spawns many short-lived subagents per run. Rendered as its own box.
+const KARAKURI = {
+  name:'Karakuri', host:'HAL9000',
+  tag:'Autonomous software factory (formerly Sentinel) · every subagent runs local Qwen3.8-27B (HAL vLLM)',
+  note:'NOT a standing agent — the Orchestrator runs a fixed pipeline, spawning these subagents per job',
+  subs:[
+    {role:'Orchestrator', d:'drives the pipeline · spawns & sequences every subagent'},
+    {role:'Gatekeeper', d:'entry gate — admits & qualifies the job'},
+    {role:'PM · Bob Dobalina', d:'spec writer — turns the ask into a spec'},
+    {role:'Architect · Vitruvius', d:'design blueprint + code review'},
+    {role:'Coder · Mr Black', d:'implements the change'},
+    {role:'QA · Duchess', d:'pre-code, contract, a11y, perf, integration & visual review passes'},
+    {role:'Security Panel', d:'adversarial security review'},
+    {role:'SRE · Scotty', d:'reliability & ops checks'},
+    {role:'Test Engineer · Hawkeye', d:'writes & runs the tests'},
+    {role:'Docs · Scribe', d:'documents the change'},
+    {role:'Reporter · Chronicle', d:'writes up the run / PR report'},
+  ]
+};
+
+const fillClass = p => p>85?'fill-hot':p>40?'fill-warn':'fill-ok';
+const fillColor = p => p>85?'#e5484d':p>40?'#d29922':'#3fb950';
+const gpuUsedTotal = m => m.gpus.reduce((a,g)=>a+(g.used||0),0);
+function machineFree(m){
+  let freeCards=0, freeVram=0;
+  m.gpus.forEach(g=>{
+    if(g.burst||g.warncard||g.committed) return;
+    const hasModel=(g.chips&&g.chips.length)||(m.spans||[]).some(s=>s.members.includes(g.idx));
+    if(!hasModel){ freeCards++; freeVram+=g.total; }
+  });
+  return {freeCards, freeVram};
+}
+function unitsHTML(m){
+  const claimed=new Set(),units=[];
+  (m.spans||[]).forEach(s=>{ s.members.forEach(i=>claimed.add(i)); const mem=s.members.map(i=>m.gpus[i]);
+    const data=Object.entries(s.data||{}).map(([k,v])=>`${k} ${v}`).join(' · ');
+    units.push(`<div class="unit span"><div class="spanhead"><span>${esc(s.name)}</span><span class="b">${esc(s.type)} · spans ${s.members.length} GPUs</span><span class="data">${esc(data)}</span></div>
+      <div class="bridge">╱╲</div><div class="spanmembers">${mem.map(g=>gpuCardHTML(g,m)).join('')}</div></div>`); });
+  m.gpus.forEach(g=>{ if(!claimed.has(g.idx)) units.push(`<div class="unit">${gpuCardHTML(g,m)}</div>`); });
+  return units.join('');
+}
+
+/* ---- overview: every machine drawn as its real GPU grid ---- */
+function renderOverview(){
+  let totVram=0,totUsed=0,totFree=0,totFreeCards=0,totModels=0;
+  FLEET.forEach(m=>{ totVram+=m.total; totUsed+=gpuUsedTotal(m); const f=machineFree(m); totFree+=f.freeVram; totFreeCards+=f.freeCards;
+    (m.spans||[]).forEach(()=>totModels++); m.gpus.forEach(g=>totModels+=(g.chips?g.chips.length:0)); });
+  const cardCount=FLEET.reduce((a,m)=>a+m.gpus.length,0);
+  const agg=`<div class="agg">
+    <div class="stat"><div class="k">Fleet VRAM</div><div class="v">${totVram}<small> GB</small></div><div class="note">${FLEET.length} GPU boxes · ${cardCount} cards</div></div>
+    <div class="stat"><div class="k">Committed</div><div class="v">${Math.round(totUsed)}<small> GB</small></div><div class="note">${totModels} models · weights + context</div></div>
+    <div class="stat free"><div class="k">Deployable free</div><div class="v">${totFreeCards}<small> cards</small></div><div class="note">${totFreeCards===0?'fully committed right now':Math.round(totFree)+' GB on empty cards'}</div></div>
+    <div class="stat"><div class="k">Reserved on-demand</div><div class="v">3<small> +1</small></div><div class="note">VibeVoice burst ×3 · 1 card recovering</div></div>
+  </div>`;
+  const blocks=FLEET.map(m=>{
+    const used=gpuUsedTotal(m),f=machineFree(m);
+    return `<div class="mblock" style="--mc:${m.mc}">
+      <div class="mbhead" data-id="${m.id}" role="button" tabindex="0">
+        <span class="dot"></span><span class="nm">${m.name}</span><span class="hw">${esc(m.hw)}</span>
+        <span class="mbstats">vram <b>${Math.round(used)}</b>/${m.total} GB · <span class="fr">${f.freeCards} free card${f.freeCards===1?'':'s'}</span></span>
+        <span class="zoom">details ↗</span>
+      </div>
+      <div class="units">${unitsHTML(m)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('overview').innerHTML=agg+`<p class="section-label">Machines · click a machine header to zoom into its full page</p>${blocks}`;
+}
+
+/* ---- machine detail ---- */
+function chipHTML(c){
+  const data=Object.entries(c.data||{}).map(([k,v])=>`<span><span class="k">${esc(k)}</span> <b>${esc(v)}</b></span>`).join('');
+  return `<div class="chip ${c.type||''}"><div class="cname">${esc(c.name)} ${c.b?`<span class="b">${esc(c.b)}</span>`:''}${c.ab?`<span class="b ab">abliterated</span>`:''}</div><div class="data">${data}</div></div>`;
+}
+function gpuCardHTML(g,m){
+  const p=Math.min(100,Math.round(100*(g.used||0)/g.total));
+  const hasModel=g.chips&&g.chips.length;
+  let cls='gpu';if(g.warncard)cls+=' warncard';else if(g.burst)cls+=' burst';else if(!hasModel)cls+=' idle';
+  let inner;
+  if(g.burst)inner=`<div class="burstlabel">◇ ${esc(g.burst)} burst pool<small>pinned · loads on demand · not free</small></div>`;
+  else if(hasModel)inner=`<div class="chips">${g.chips.map(chipHTML).join('')}</div>`;
+  else inner=`<div class="free">— free —</div>`;
+  return `<div class="${cls}">
+    <div class="ghead"><span class="gidx">GPU ${g.idx}</span><span class="gname">${esc(g.name)}</span><span class="gvram">${g.used||0}/${g.total} GB · ${p}%</span></div>
+    <div class="bar"><span class="${fillClass(p)}" style="width:${Math.max(2,p)}%"></span></div>
+    ${g.note?`<div style="font-family:var(--mono);font-size:10px;color:var(--mut)">${esc(g.note)}</div>`:''}${inner}</div>`;
+}
+function renderDetail(m){
+  document.documentElement.style.setProperty('--accent',m.mc);
+  const used=gpuUsedTotal(m),f=machineFree(m);
+  const activeCards=m.gpus.filter(g=>(g.chips&&g.chips.length)||(m.spans||[]).some(s=>s.members.includes(g.idx))).length;
+  const proxies=m.proxies.map(p=>`<div class="prox"><div class="top"><span class="pname">${esc(p.name)}</span><span class="port">${esc(p.port)}</span></div>
+    <div class="route"><span class="be ${p.be}">${esc(p.be)}</span><span class="arrow">→</span> ${esc(p.route)}</div>
+    <div class="flags">${(p.flags||[]).map(fl=>`<span class="pill">${esc(fl)}</span>`).join('')}</div></div>`).join('');
+  document.getElementById('detail').innerHTML=`<div class="chassis">
+    <div class="mhead"><div class="eye"></div>
+      <div><h2 class="mname">${m.name}</h2><div class="msub">${esc(m.hw)} · ${m.vendor}</div></div>
+      <div class="mrole"><span class="tag">${esc(m.role)}</span>
+        <div class="totals">VRAM <b>${Math.round(used)} / ${m.total} GB</b> · deployable <b style="color:var(--ok)">${f.freeCards} card${f.freeCards===1?'':'s'}</b> · active <b>${activeCards}/${m.gpus.length}</b></div></div></div>
+    <div class="proxbar"><p class="section-label">Fronting proxies</p><div class="proxies">${proxies}</div></div>
+    <div class="gpubar"><p class="section-label">GPUs · model residency</p><div class="units">${unitsHTML(m)}</div>
+      <div class="legend"><div class="row">
+        <span class="item"><span class="sw fill-ok"></span> &lt;40%</span>
+        <span class="item"><span class="sw fill-warn"></span> 40–85%</span>
+        <span class="item"><span class="sw fill-hot"></span> &gt;85%</span>
+        <span class="item"><span class="swbox"></span> load-on-demand (not free)</span>
+        <span class="item"><span class="sw" style="background:var(--llama)"></span> spanning model bridges its cards</span>
+      </div></div></div></div>`;
+}
+
+/* ---- cloud + agents ---- */
+function renderCloud(){
+  const cards=CLOUD.map(c=>`<div class="ccard ${c.on?'':'off'}">
+    <div class="ct"><span class="cn">${esc(c.name)}</span><span class="status ${c.on?'on':'no'}">${c.on?'active':'inactive'}</span></div>
+    <div class="use">${esc(c.use)}</div>
+    <div class="ml">${c.models.map(x=>`<span>${esc(x)}</span>`).join('')}</div></div>`).join('');
+  document.getElementById('view-cloud').innerHTML=`<p class="section-label">Cloud subscriptions — metered fallbacks & specialty models</p><div class="grid2">${cards}</div>
+    <p class="foot" style="margin-top:16px">local self-hosted models are the default; these are the paid/free cloud tiers the proxies fall back to</p>`;
+}
+function renderAgents(){
+  const cards=AGENTS.map(a=>`<div class="acard">
+    <div class="an">${esc(a.name)}<span class="ah">${esc(a.host)}</span></div>
+    <div class="ar">${esc(a.role)}</div>
+    <div class="pts"><span class="k">points at</span> <b>${esc(a.points)}</b></div></div>`).join('');
+  const subs=KARAKURI.subs.map(s=>`<div class="chip svc"><div class="cname">${esc(s.role)}</div><div class="data"><b>${esc(s.d)}</b></div></div>`).join('');
+  const kbox=`<div class="gpu" style="margin-top:20px;border-left:3px solid var(--svc)">
+    <div class="an" style="font-size:15px">${esc(KARAKURI.name)}<span class="ah">${esc(KARAKURI.host)} · factory, not a standing agent</span></div>
+    <div class="ar">${esc(KARAKURI.tag)}</div>
+    <div class="pts" style="margin:5px 0 11px"><span class="k">⚠ note</span> <b>${esc(KARAKURI.note)}</b></div>
+    <div class="k" style="margin-bottom:6px">subagents it spawns (per-role pipeline)</div>
+    <div class="chips">${subs}</div></div>`;
+  document.getElementById('view-agents').innerHTML=`<p class="section-label">Agents — the standing agents (each talks to its own model), plus the Karakuri factory (spawns subagents)</p><div class="grid2">${cards}</div>${kbox}`;
+}
+
+/* ---- nav ---- */
+let curView='compute';
+function showMachine(id){
+  const m=FLEET.find(x=>x.id===id); if(!m)return;
+  renderDetail(m);
+  document.getElementById('overview').classList.add('hide');
+  document.getElementById('detail').classList.remove('hide');
+  document.getElementById('backwrap').classList.remove('hide');
+  document.getElementById('crumbTitle').textContent=m.name;
+  document.getElementById('crumbSub').textContent=esc(m.hw);
+  window.scrollTo({top:0});
+}
+function backToOverview(){
+  document.getElementById('overview').classList.remove('hide');
+  document.getElementById('detail').classList.add('hide');
+  document.getElementById('backwrap').classList.add('hide');
+  document.documentElement.style.setProperty('--accent','#e5484d');
+  document.getElementById('crumbTitle').textContent='Fleet LLM Map';
+  document.getElementById('crumbSub').textContent='compute · cloud · agents';
+}
+function switchView(v){
+  curView=v;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.view===v));
+  ['compute','cloud','agents'].forEach(x=>document.getElementById('view-'+x).classList.toggle('hide',x!==v));
+  document.getElementById('backwrap').classList.add('hide');
+  if(v==='compute'){ backToOverview(); }
+  else { document.documentElement.style.setProperty('--accent','#e5484d');
+    document.getElementById('crumbTitle').textContent = v==='cloud'?'Cloud subscriptions':'Agents';
+    document.getElementById('crumbSub').textContent = v==='cloud'?'metered fallbacks & specialty models':'who points at what';
+  }
+  window.scrollTo({top:0});
+}
+renderOverview(); renderCloud(); renderAgents();
+document.getElementById('overview').addEventListener('click',e=>{const c=e.target.closest('.mbhead');if(c)showMachine(c.dataset.id);});
+document.getElementById('overview').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList.contains('mbhead')){e.preventDefault();showMachine(e.target.dataset.id);}});
+document.getElementById('backbtn').addEventListener('click',backToOverview);
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchView(t.dataset.view)));
+</script>
+</body></html>
