@@ -72,6 +72,12 @@
   .mrole .totals{font-family:var(--mono);font-size:12.5px;color:var(--mut);margin-top:8px}
   .mrole b{color:var(--ink);font-weight:600}
 
+  .specbar{padding:16px 24px;border-bottom:1px solid var(--rail)}
+  .specs{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 22px}
+  .sp{display:flex;flex-direction:column;gap:3px;border-left:2px solid var(--rail2);padding-left:11px}
+  .sk{font-family:var(--mono);font-size:9.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--dim)}
+  .sv{font-size:13.5px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .mdesc{margin:14px 0 0;font-size:13.5px;line-height:1.55;color:var(--mut);max-width:70ch}
   .proxbar{padding:16px 24px;border-bottom:1px solid var(--rail);background:#0e141980}
   .proxies{display:flex;flex-wrap:wrap;gap:10px}
   .prox{flex:1 1 190px;min-width:180px;border:1px solid var(--rail2);border-radius:9px;background:linear-gradient(180deg,#171f26,#131a20);padding:11px 13px}
@@ -181,6 +187,8 @@ const esc = s => String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt
 const FLEET = [
   { id:'hal9000', name:'HAL9000', mc:'#e5484d', hw:'6 × RTX 3090 · 144 GB', vendor:'nvidia',
     total:144, role:'Central inference · Switchboard hub',
+    specs:{chassis:'Supermicro X10DRI-T',cpu:'2× Xeon E5-2690 v4 · 28c/56t',mem:'503 GiB system RAM',os:'Ubuntu 24.04 · kernel 7.0'},
+    desc:'Primary compute and the fleet’s service host — the free-CUDA local-inference tier plus most of the backend (LLM proxy, fleet memory, the Karakuri software factory).',
     proxies:[
       {name:'openwebui-vllm',port:'',be:'vllm',route:'local · qwen3.8-27b'},
       {name:'openwebui-ollama',port:'',be:'ollama',route:'local · gemma3:4b'},
@@ -203,6 +211,8 @@ const FLEET = [
 
   { id:'wopr', name:'WOPR', mc:'#3fb950', hw:'7 × MI50 32GB · gfx906', vendor:'amd',
     total:224, role:'Big dense-model + MoE inference',
+    specs:{chassis:'Supermicro X10DRH-iT',cpu:'2× Xeon E5-2690 v4 · 28c/56t',mem:'251 GiB system RAM',os:'Ubuntu 24.04 · kernel 7.0'},
+    desc:'The fleet’s largest usable discrete-VRAM pool — seven MI50 cards (224 GB) for big dense models and mixture-of-experts tenants.',
     proxies:[{name:'wopr-proxy',port:'',be:'llama',route:'fronts local llama.cpp tenants → Switchboard'}],
     spans:[
       {members:[0,1],name:'Qwen3.6-35B-A3B',type:'llama',data:{quant:'Q8_0',ctx:'40k',split:'tensor-split ×2'}},
@@ -223,6 +233,8 @@ const FLEET = [
 
   { id:'macstudio', name:'macstudio', mc:'#5b9dd9', hw:'Apple M-series · 256 GB unified', vendor:'apple',
     total:256, role:'Apple-silicon inference · ollama-cloud origin',
+    specs:{chassis:'Apple Mac Studio · M3 Ultra',cpu:'28-core M3 Ultra (20P + 8E)',mem:'256 GB unified memory',os:'macOS 26.2'},
+    desc:'The big-unified-memory tier and the single largest addressable memory pool in the fleet — hosts models too large for any one GPU or GPU pool, currently DeepSeek V4 Flash.',
     proxies:[{name:'macstudio-proxy',port:'',be:'llama',route:'local · deepseek-v4-flash'}],
     gpus:[
       {idx:0,name:'Apple unified memory',total:256,used:256,unified:true,committed:true,
@@ -233,6 +245,8 @@ const FLEET = [
 
   { id:'apol', name:'apol', mc:'#22b8cf', hw:'2 × Radeon VII 16GB · T2 Linux', vendor:'amd',
     total:32, role:'Dual Radeon VII eGPU inference',
+    specs:{chassis:'T2 Mac · Linux · Thunderbolt eGPU',cpu:'12 threads',mem:'16 GiB system RAM',os:'Ubuntu 24.04 · T2 kernel'},
+    desc:'A Thunderbolt Radeon VII pair — each card runs its own dedicated model for a specific crew agent.',
     proxies:[{name:'llama-server ×2',port:'/',be:'llama.cpp',route:'per-card llama-server (mixa3607/gfx906) — one dedicated model per agent'}],
     gpus:[
       {idx:0,name:'Radeon VII 16GB',total:16,used:14.9,chips:[
@@ -243,6 +257,8 @@ const FLEET = [
 
   { id:'drtheopolis', name:'DrTheopolis', mc:'#a371f7', hw:'2 × RX 6800 · macOS · ToshLLM', vendor:'amd',
     total:32, role:'Abliterated pair · Metal inference',
+    specs:{chassis:'Mac mini 2018 (T2) · 2× eGPU',cpu:'12 threads',mem:'64 GiB system RAM',os:'macOS 15.7'},
+    desc:'Two independent 16 GB cards, each serving its own model copy — built for A/B and side-by-side grading runs.',
     proxies:[{name:'drtheo-proxy',port:'',be:'llama',route:'fronts 2 local ToshLLM instances'}],
     gpus:[
       {idx:0,name:'RX 6800 16GB',total:16,used:14,chips:[
@@ -379,6 +395,14 @@ function renderDetail(m){
       <div><h2 class="mname">${m.name}</h2><div class="msub">${esc(m.hw)} · ${m.vendor}</div></div>
       <div class="mrole"><span class="tag">${esc(m.role)}</span>
         <div class="totals">VRAM <b>${Math.round(used)} / ${m.total} GB</b> · deployable <b style="color:var(--ok)">${f.freeCards} card${f.freeCards===1?'':'s'}</b> · active <b>${activeCards}/${m.gpus.length}</b></div></div></div>
+    ${m.specs?`<div class="specbar"><p class="section-label">Machine</p>
+      <div class="specs">
+        <div class="sp"><span class="sk">Chassis</span><span class="sv">${esc(m.specs.chassis)}</span></div>
+        <div class="sp"><span class="sk">CPU</span><span class="sv">${esc(m.specs.cpu)}</span></div>
+        <div class="sp"><span class="sk">Memory</span><span class="sv">${esc(m.specs.mem)}</span></div>
+        <div class="sp"><span class="sk">OS</span><span class="sv">${esc(m.specs.os)}</span></div>
+      </div>
+      ${m.desc?`<p class="mdesc">${esc(m.desc)}</p>`:''}</div>`:''}
     <div class="proxbar"><p class="section-label">Fronting proxies</p><div class="proxies">${proxies}</div></div>
     <div class="gpubar"><p class="section-label">GPUs · model residency</p><div class="units">${unitsHTML(m)}</div>
       <div class="legend"><div class="row">
