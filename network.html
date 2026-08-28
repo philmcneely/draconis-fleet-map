@@ -62,6 +62,7 @@
   /* group trays */
   .tray{margin-top:16px;border:1px dashed var(--rail2);border-radius:14px;padding:14px 16px;background:#0c121c88}
   .tray h3{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:0 0 12px;font-weight:500}
+  .tray.dark .node{opacity:.6;filter:saturate(.65)} .tray.dark .node:hover{opacity:1;filter:none}
   .traygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:9px}
   .c-compute{--ac:var(--amber)} .c-agent{--ac:var(--cyan)} .c-storage{--ac:var(--green)}
   .c-auto{--ac:var(--violet)} .c-gear{--ac:var(--slate)} .c-planned{--ac:var(--violet)} .c-legacy{--ac:var(--dim)}
@@ -128,8 +129,8 @@
     <div class="fabric" id="fabric"></div>
     <div class="lanes" id="lanes"></div>
     <div class="tray" id="trayFabric"></div>
-    <div class="tray" id="trayPlanned"></div>
-    <div class="tray" id="trayLegacy"></div>
+    <div class="tray dark" id="trayPlanned"></div>
+    <div class="tray dark" id="trayLegacy"></div>
   </section>
 
   <!-- LOGICAL VIEW -->
@@ -341,10 +342,11 @@ function renderPhysical(){
   // planned tray
   const planned=N.filter(n=>n.cat==='planned');
   document.getElementById('trayPlanned').innerHTML =
-    `<h3>Not on the network yet — planned</h3><div class="traygrid">${planned.map(nodeCard).join('')}</div>`;
+    `<h3>◐ Dark reserve — enterprise iron, powered down / not yet deployed</h3><div class="traygrid">${planned.map(nodeCard).join('')}</div>`;
   const legacy=N.filter(n=>n.cat==='legacy');
   document.getElementById('trayLegacy').innerHTML =
-    `<h3>Legacy / to be catalogued</h3><div class="traygrid">${legacy.map(nodeCard).join('')}</div>`;
+    `<h3>◐ Dark / legacy — powered down or unassigned</h3><div class="traygrid">${legacy.map(nodeCard).join('')}</div>`
+    + `<p style="font-family:var(--mono);font-size:11px;color:var(--dim);margin:12px 0 0">+ additional dark equipment on hand, not individually catalogued.</p>`;
 }
 
 function renderLegend(){
@@ -352,8 +354,9 @@ function renderLegend(){
   document.getElementById('legend').innerHTML = items.map(([c,l])=>
     `<span class="k"><span class="sw" style="background:var(${CATVAR[c]})"></span>${l}</span>`).join('')
     + `<span class="k"><span class="todo">•</span> needs your input</span>`;
-  const live=N.filter(n=>n.cat!=='planned'&&n.cat!=='legacy'&&n.status!=='offline').length;
-  document.getElementById('count').textContent = `${N.length} machines · ${live} live · ${N.filter(n=>n.cat==='planned').length} planned`;
+  const live=N.filter(n=>['compute','agent','auto'].includes(n.cat)&&n.status!=='offline').length;
+  const dark=N.length-live;
+  document.getElementById('count').textContent = `${N.length} catalogued · ${live} live · ${dark} dark / reserve`;
 }
 
 function renderLogical(){
