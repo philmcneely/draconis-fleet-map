@@ -252,6 +252,10 @@ const N = [
   specs:{Type:'Dell PowerVault TL2000',Media:'LTO tape',Status:'in rack — status TBD'},desc:'A Dell PowerVault TL2000 tape library in the rack — an offline/near-line backup tier. Confirm whether it’s live and what it backs up.',todo:true},
  {id:'jbods',name:'JBOD disk shelves (×several)',cat:'storage',lan:null,role:'SAS/direct-attach disk shelves',
   specs:{Type:'Dell PowerVault + JBOD arrays',Count:'several (16-bay, 12-bay, 24×2.5", large 4-col)',Status:'attach to a host — TBD'},desc:'The rack holds several disk shelves/JBODs (16-bay, 12-bay, 24×2.5", and large 4-column arrays), fanned out over the LSI SAS switch. Which host(s) they attach to and total capacity: to be captured.',todo:true},
+ {id:'xserveraid1',name:'Xserve RAID (populated)',cat:'storage',lan:null,role:'Apple Fibre Channel array',
+  specs:{Model:'Apple A1009 Xserve RAID',Drives:'12× 500 GB = 6 TB',Controllers:'2 · Fibre Channel',Status:'legacy FC storage'},desc:'An Apple Xserve RAID (A1009) — 12× 500 GB (6 TB), dual controllers over Fibre Channel. Legacy Apple storage; needs an FC host to be usable.',todo:true},
+ {id:'xserveraid2',name:'Xserve RAID (diskless)',cat:'storage',lan:null,role:'Apple Fibre Channel array (empty)',
+  specs:{Model:'Apple A1009 Xserve RAID',Drives:'none — empty chassis',PSU:'2×',Status:'legacy / spare'},desc:'A second Apple Xserve RAID (A1009) chassis with dual PSUs but no drives — a spare/donor for the populated unit.',todo:true},
 ];
 
 // ---- network gear / fabric ----
