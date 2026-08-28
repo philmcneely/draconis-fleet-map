@@ -188,7 +188,7 @@ const FLEET = [
   { id:'hal9000', name:'HAL9000', mc:'#e5484d', hw:'6 × RTX 3090 · 144 GB', vendor:'nvidia',
     total:144, role:'Central inference · Switchboard hub',
     specs:{chassis:'Supermicro X10DRI-T',cpu:'2× Xeon E5-2690 v4 · 28c/56t',mem:'503 GiB system RAM',os:'Ubuntu 24.04 · kernel 7.0'},
-    desc:'Primary compute and the fleet’s service host — the free-CUDA local-inference tier plus most of the backend (LLM proxy, fleet memory, the Karakuri software factory).',
+    desc:'HAL9000 is the fleet’s primary compute node and the home of its “free CUDA tier” — the six pooled RTX 3090s carry local LLM inference (a quantized Qwen3.8-27B, plus speech-to-text, image generation, and audio work), always on GPU and never falling back to CPU. It also hosts most of the fleet’s backend — the LLM proxy and cost dashboard, the shared memory service, and the Karakuri software factory — all running side by side as independent containers. There is no central orchestrator: every box, this one included, manages its own services.',
     proxies:[
       {name:'openwebui-vllm',port:'',be:'vllm',route:'local · qwen3.8-27b'},
       {name:'openwebui-ollama',port:'',be:'ollama',route:'local · gemma3:4b'},
@@ -212,7 +212,7 @@ const FLEET = [
   { id:'wopr', name:'WOPR', mc:'#3fb950', hw:'7 × MI50 32GB · gfx906', vendor:'amd',
     total:224, role:'Big dense-model + MoE inference',
     specs:{chassis:'Supermicro X10DRH-iT',cpu:'2× Xeon E5-2690 v4 · 28c/56t',mem:'251 GiB system RAM',os:'Ubuntu 24.04 · kernel 7.0'},
-    desc:'The fleet’s largest usable discrete-VRAM pool — seven MI50 cards (224 GB) for big dense models and mixture-of-experts tenants.',
+    desc:'WOPR is the fleet’s secondary inference box — the AMD/ROCm counterpart to HAL’s NVIDIA pool, and its largest bank of usable discrete VRAM (seven MI50 cards, 224 GB). It runs several models at once, each pinned to one or more cards and served independently, so big dense models and mixture-of-experts tenants have room to run. Its job is to keep grading and evaluation sweeps, secondary chat traffic, and models that don’t need HAL’s CUDA capacity from competing for it.',
     proxies:[{name:'wopr-proxy',port:'',be:'llama',route:'fronts local llama.cpp tenants → Switchboard'}],
     spans:[
       {members:[0,1],name:'Qwen3.6-35B-A3B',type:'llama',data:{quant:'Q8_0',ctx:'40k',split:'tensor-split ×2'}},
@@ -234,7 +234,7 @@ const FLEET = [
   { id:'macstudio', name:'macstudio', mc:'#5b9dd9', hw:'Apple M-series · 256 GB unified', vendor:'apple',
     total:256, role:'Apple-silicon inference · ollama-cloud origin',
     specs:{chassis:'Apple Mac Studio · M3 Ultra',cpu:'28-core M3 Ultra (20P + 8E)',mem:'256 GB unified memory',os:'macOS 26.2'},
-    desc:'The big-unified-memory tier and the single largest addressable memory pool in the fleet — hosts models too large for any one GPU or GPU pool, currently DeepSeek V4 Flash.',
+    desc:'Mac Studio is the fleet’s big-unified-memory tier — its M3 Ultra shares one 256 GB pool across CPU and GPU, the single largest addressable memory in the fleet, so it can host models too large to fit on any one discrete GPU or GPU pool. The trade-off is that it’s a single engine with limited concurrency rather than a multi-card workhorse, so it’s reserved for the “won’t fit anywhere else” model — currently DeepSeek V4 Flash — and isn’t treated as spare capacity.',
     proxies:[{name:'macstudio-proxy',port:'',be:'llama',route:'local · deepseek-v4-flash'}],
     gpus:[
       {idx:0,name:'Apple unified memory',total:256,used:256,unified:true,committed:true,
@@ -246,7 +246,7 @@ const FLEET = [
   { id:'apol', name:'apol', mc:'#22b8cf', hw:'2 × Radeon VII 16GB · T2 Linux', vendor:'amd',
     total:32, role:'Dual Radeon VII eGPU inference',
     specs:{chassis:'T2 Mac · Linux · Thunderbolt eGPU',cpu:'12 threads',mem:'16 GiB system RAM',os:'Ubuntu 24.04 · T2 kernel'},
-    desc:'A Thunderbolt Radeon VII pair — each card runs its own dedicated model for a specific crew agent.',
+    desc:'apol is a Thunderbolt eGPU box — two Radeon VII cards on a T2 Mac running Linux — where each card runs one dedicated model at a fixed quant, assigned to a specific crew agent. Keeping one model resident per card gives those agents a stable, always-available local endpoint instead of competing for shared capacity.',
     proxies:[{name:'llama-server ×2',port:'/',be:'llama.cpp',route:'per-card llama-server (mixa3607/gfx906) — one dedicated model per agent'}],
     gpus:[
       {idx:0,name:'Radeon VII 16GB',total:16,used:14.9,chips:[
@@ -258,7 +258,7 @@ const FLEET = [
   { id:'drtheopolis', name:'DrTheopolis', mc:'#a371f7', hw:'2 × RX 6800 · macOS · ToshLLM', vendor:'amd',
     total:32, role:'Abliterated pair · Metal inference',
     specs:{chassis:'Mac mini 2018 (T2) · 2× eGPU',cpu:'12 threads',mem:'64 GiB system RAM',os:'macOS 15.7'},
-    desc:'Two independent 16 GB cards, each serving its own model copy — built for A/B and side-by-side grading runs.',
+    desc:'DrTheopolis is a Mac driving two independent 16 GB AMD cards over Thunderbolt, each running its own copy of a model on its own Metal engine — deliberately not pooled into one 32 GB device. That makes it well suited to A/B and side-by-side comparisons, grading sweeps, or simply doubling single-model throughput. It runs ToshLLM, a locally patched llama.cpp build with the flash-attention fix these cards need on Metal.',
     proxies:[{name:'drtheo-proxy',port:'',be:'llama',route:'fronts 2 local ToshLLM instances'}],
     gpus:[
       {idx:0,name:'RX 6800 16GB',total:16,used:14,chips:[
