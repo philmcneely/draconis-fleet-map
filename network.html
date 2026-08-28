@@ -228,6 +228,10 @@ const N = [
   specs:{Chassis:'PowerEdge C6100 XS23-SB · 2U · 4 nodes',CPU:'8× Xeon L5420',RAM:'32 GiB',Extras:'rail kit',Status:'not deployed yet'},desc:'A Dell PowerEdge C6100 (XS23-SB) — a 2U four-node chassis with 8× L5420 and 32 GB. Not yet deployed.',todo:true},
  {id:'c6100bare',name:'Dell C6100 (3.5" barebones) ×2',cat:'planned',lan:null,role:'2U barebones chassis',
   specs:{Chassis:'PowerEdge C6100 · 2U · 3.5"',Count:'×2 barebones + 16 drive trays',Status:'barebones — needs CPUs/RAM/disks'},desc:'Two barebones C6100 3.5" chassis plus 16 drive trays — spare/expansion frames to populate. Brings the C6100 total to 5 chassis (2× TY3, 1× SB, 2× barebones).',todo:true},
+ {id:'sm846',name:'Supermicro SC846 ×2 (24-bay)',cat:'planned',lan:null,role:'4U 24-bay storage server',
+  specs:{Chassis:'Supermicro SC846E16-R1200B · 4U · 24× 3.5"',Board:'X8DTE (dual LGA1366 Xeon 5500/5600) — likely',PSU:'redundant 1200W',Count:'×2',Status:'racked (bottom of rack in photos)'},desc:'Two Supermicro SC846E16-R1200B chassis — 4U, 24× 3.5" bays with SAS2 expander backplanes and redundant 1200W PSUs, on X8DTE dual-Xeon boards. These are the big 24-bay units at the bottom of the racks; powered/network status TBD.',todo:true},
+ {id:'sm836',name:'Supermicro SC836 ×2 (16-bay)',cat:'planned',lan:null,role:'3U 16-bay storage server',
+  specs:{Chassis:'Supermicro SC836E26-R1200 · 3U · 16× 3.5"',Backplane:'E26 dual SAS2 expander',PSU:'redundant 1200W',Count:'×2',Status:'racked (in the rack photos)'},desc:'Two Supermicro SC836E26-R1200 chassis — 3U, 16× 3.5" bays with redundant SAS2 expander backplanes and 1200W PSUs. Racked storage-server frames; powered/network status TBD.',todo:true},
 
  // --- LEGACY / UNKNOWN ---
  {id:'oldmacpro',name:'Old Mac Pro (256 GB)',cat:'legacy',lan:null,role:'Classic Mac Pro tower',
@@ -256,8 +260,8 @@ const N = [
  // --- RACK STORAGE (from photos) ---
  {id:'tl2000',name:'PowerVault TL2000 ×2 (LTO-6)',cat:'storage',lan:null,role:'Tape libraries (backup)',
   specs:{Type:'Dell PowerVault TL2000 · ×2',Drive:'LTO-6 SAS (Ultrium L6)',Capacity:'2.5 TB native / 6.25 TB compressed per tape',Media:'~38 LTO-6 tapes (22 + 16) ≈ 95 TB native',Status:'in rack — status TBD'},desc:'Two Dell PowerVault TL2000 LTO-6 SAS tape libraries with ~38 LTO-6 tapes between them (~95 TB native, ~240 TB compressed) — a proper offline/near-line backup tier. Confirm whether live and what they back up.',todo:true},
- {id:'jbods',name:'JBOD disk shelves (×several)',cat:'storage',lan:null,role:'SAS/direct-attach disk shelves',
-  specs:{Type:'Dell PowerVault + JBOD arrays',Count:'several (16-bay, 12-bay, 24×2.5", large 4-col)',Status:'attach to a host — TBD'},desc:'The rack holds several disk shelves/JBODs (16-bay, 12-bay, 24×2.5", and large 4-column arrays), fanned out over the LSI SAS switch. Which host(s) they attach to and total capacity: to be captured.',todo:true},
+ {id:'jbods',name:'Other rack disk shelves',cat:'storage',lan:null,role:'SAS/direct-attach shelves',
+  specs:{Type:'assorted mid-rack shelves',Note:'16-bay & 12-bay & 24×2.5" units (separate from the Supermicro + MD1000 entries)',Status:'attach to a host — TBD'},desc:'The remaining mid-rack disk shelves (16-bay, 12-bay, 24×2.5") beyond the named Supermicro SC846/SC836, MD1000, and Xserve RAID units — fanned over the LSI SAS switch. Host attachment and capacity TBD.',todo:true},
  {id:'md1000',name:'PowerVault MD1000',cat:'storage',lan:null,role:'15-bay SAS disk shelf (3U)',
   specs:{Model:'Dell PowerVault MD1000 (AMP01)',Bays:'15× 3.5"',Status:'DAS shelf — attaches to a host'},desc:'A Dell PowerVault MD1000 (AMP01) — a 15-bay 3U SAS direct-attach disk enclosure, part of the rack storage fanned over the LSI SAS switch.',todo:true},
  {id:'xserveraid1',name:'Xserve RAID (populated)',cat:'storage',lan:null,role:'Apple Fibre Channel array',
