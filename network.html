@@ -183,8 +183,8 @@ const N = [
 
  // --- LAN-B compute (eGPU utility) ---
  {id:'drtheopolis',name:'DrTheopolis',cat:'compute',lan:'B',ip:'…4',role:'Dual-eGPU utility inference',
-  specs:{Host:'Mac mini 2018 · i7 6c/12t',RAM:'16 GiB',GPU:'2× RX 6800 · 32 GB',OS:'macOS 15.7'},link:'index.html',
-  desc:'Two independent 16 GB AMD cards over Thunderbolt, each running its own model on Metal (ToshLLM) — built for A/B and grading runs, not pooled.'},
+  specs:{Host:'Mac mini 2018 · i7 6c/12t',RAM:'16 GiB',GPU:'2× RX 6800 · 32 GB',OS:'Ubuntu 24.04 · T2 kernel'},link:'index.html',
+  desc:'Two independent 16 GB AMD RX 6800 cards over Thunderbolt eGPU enclosures on ROCm (Linux), each serving its own Qwen3.8-27B endpoint (one stock, one abliterated) — built for A/B and grading runs, not pooled.'},
  {id:'apol',name:'apol',cat:'compute',lan:'B',ip:'…222',role:'Dual Radeon VII eGPU',
   specs:{Host:'T2 Mac · Linux',RAM:'16 GiB',GPU:'2× Radeon VII · 32 GB',OS:'Ubuntu 24.04 (T2)'},link:'index.html',
   desc:'A Thunderbolt eGPU box — each Radeon VII runs one dedicated model for a specific crew agent, kept resident for a stable local endpoint.'},

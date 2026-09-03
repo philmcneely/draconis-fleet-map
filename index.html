@@ -255,16 +255,16 @@ const FLEET = [
         {name:'Qwen3.8-27B',type:'llama',b:'card1 · llama-server',data:{vram:'≈14.9 GB',quant:'IQ4_XS',ctx:'8k',serves:'Scotty (dedicated)'}}]},
     ]},
 
-  { id:'drtheopolis', name:'DrTheopolis', mc:'#a371f7', hw:'2 × RX 6800 · macOS · ToshLLM', vendor:'amd',
-    total:32, role:'Abliterated pair · Metal inference',
-    specs:{chassis:'Mac mini 2018 (T2) · 2× eGPU',cpu:'12 threads',mem:'64 GiB system RAM',os:'macOS 15.7'},
-    desc:'DrTheopolis is a Mac driving two independent 16 GB AMD cards over Thunderbolt, each running its own copy of a model on its own Metal engine — deliberately not pooled into one 32 GB device. That makes it well suited to A/B and side-by-side comparisons, grading sweeps, or simply doubling single-model throughput. It runs ToshLLM, a locally patched llama.cpp build with the flash-attention fix these cards need on Metal.',
-    proxies:[{name:'drtheo-proxy',port:'',be:'llama',route:'fronts 2 local ToshLLM instances'}],
+  { id:'drtheopolis', name:'DrTheopolis', mc:'#a371f7', hw:'2 × RX 6800 · Linux · ROCm', vendor:'amd',
+    total:32, role:'Abliterated pair · ROCm inference',
+    specs:{chassis:'Mac mini 2018 (T2) · 2× eGPU',cpu:'12 threads',mem:'64 GiB system RAM',os:'Ubuntu 24.04 · T2 kernel'},
+    desc:'DrTheopolis is a T2 Mac mini 2018 running Linux (Ubuntu 24.04, t2linux-patched kernel), driving two independent 16 GB AMD RX 6800 cards over Thunderbolt eGPU enclosures — an AKiTiO Node Titan and a Razer Core X — on ROCm. The two cards are deliberately not pooled into one 32 GB device: the Thunderbolt-linked cards have no peer-to-peer path, so each serves its own Qwen3.8-27B endpoint (one stock, one abliterated). That suits A/B and side-by-side comparisons, grading sweeps, or simply doubling single-model throughput. Bringing the second card up under Linux required a doorbell-BAR (BAR2) relocation fix — without it the second card compute ring times out — documented in the public github.com/philmcneely/t2-egpu-linux repo.',
+    proxies:[{name:'drtheo-proxy',port:'',be:'llama',route:'fronts 2 local per-card endpoints'}],
     gpus:[
       {idx:0,name:'RX 6800 16GB',total:16,used:14,chips:[
-        {name:'Qwen3.8-27B',type:'llama',b:'instance A · ToshLLM (Metal)',data:{vram:'≈14 GB',quant:'UD-IQ4_XS',ctx:'4k',build:'stock'}}]},
+        {name:'Qwen3.8-27B',type:'llama',b:'card0 · llama.cpp (ROCm)',data:{vram:'≈14 GB',quant:'IQ4_XS',ctx:'4k',build:'stock'}}]},
       {idx:1,name:'RX 6800 16GB',total:16,used:14,chips:[
-        {name:'Qwen3.8-27B',ab:true,type:'llama',b:'instance B · ToshLLM (Metal)',data:{vram:'≈14 GB',quant:'IQ4_XS',ctx:'4k',build:'Heretic · abliterated'}}]},
+        {name:'Qwen3.8-27B',ab:true,type:'llama',b:'card1 · llama.cpp (ROCm)',data:{vram:'≈14 GB',quant:'IQ4_XS',ctx:'4k',build:'Heretic · abliterated'}}]},
     ]},
 ];
 
