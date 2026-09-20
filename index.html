@@ -200,10 +200,9 @@ const FLEET = [
       {members:[4,5],name:'Qwen3.6-27B',type:'vllm',data:{quant:'int4 AutoRound',ctx:'256k',split:'tensor-parallel ×2'}},
     ],
     gpus:[
-      {idx:0,name:'RTX 3090',total:24,used:18,note:'Whisper + ComfyUI + on-demand gemma3:4b (ollama pinned to GPU0)',chips:[
+      {idx:0,name:'RTX 3090',total:24,used:18,note:'Whisper pinned · ComfyUI/Flux bursts into the rest',chips:[
         {name:'Whisper STT',type:'svc',b:'service · pinned',data:{vram:'≈8 GB',role:'speech→text'}},
-        {name:'ComfyUI',type:'svc',b:'service · active',data:{vram:'≈10 GB',role:'image / Flux'}},
-        {name:'gemma3:4b',type:'ollama',b:'ollama · on-demand',data:{quant:'Q4_K_M',ctx:'131k',role:'utility LLM · loads on call'}}]},
+        {name:'ComfyUI',type:'svc',b:'service · active',data:{vram:'≈10 GB',role:'image / Flux'}}]},
       {idx:1,name:'RTX 3090',total:24,used:0.7,burst:'VibeVoice',note:'Karakuri attribution helper resident (<1 GB)'},
       {idx:2,name:'RTX 3090',total:24,used:24,chips:[
         {name:'Qwen3.8-27B',type:'vllm',b:'vLLM',data:{vram:'≈24 GB',quant:'W4A16',ctx:'100k',kv:'fp8'}}]},
