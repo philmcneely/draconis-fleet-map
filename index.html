@@ -188,7 +188,7 @@ const FLEET = [
   { id:'hal9000', name:'HAL9000', mc:'#e5484d', hw:'6 × RTX 3090 · 144 GB', vendor:'nvidia',
     total:144, role:'Central inference · Switchboard hub',
     specs:{chassis:'Supermicro X10DRI-T',cpu:'2× Xeon E5-2690 v4 · 28c/56t',mem:'503 GiB system RAM',os:'Ubuntu 24.04 · kernel 7.0'},
-    desc:'HAL9000 is the fleet’s primary compute node and the home of its “free CUDA tier” — the six pooled RTX 3090s carry local LLM inference (a quantized Qwen3.8-27B, plus speech-to-text, image generation, and audio work), always on GPU and never falling back to CPU. It also hosts most of the fleet’s backend — the LLM proxy and cost dashboard, the shared memory service, and the Karakuri software factory — all running side by side as independent containers. There is no central orchestrator: every box, this one included, manages its own services.',
+    desc:'HAL9000 is the fleet’s primary compute node and the home of its “free CUDA tier” — the six pooled RTX 3090s carry local LLM inference (two local vLLM models — a W4A16 Qwen3.8-27B on one card and a tensor-parallel Qwen3.6-27B across two more — plus on-demand gemma3:4b, speech-to-text, image generation, and audio work), always on GPU and never falling back to CPU. It also hosts most of the fleet’s backend — the LLM proxy and cost dashboard, the shared memory service, and the Karakuri software factory — all running side by side as independent containers. There is no central orchestrator: every box, this one included, manages its own services.',
     proxies:[
       {name:'openwebui-vllm',port:'',be:'vllm',route:'local · qwen3.8-27b'},
       {name:'openwebui-ollama',port:'',be:'ollama',route:'local · gemma3:4b'},
@@ -197,16 +197,17 @@ const FLEET = [
       {name:'karakuri',port:'karakuri',be:'vllm',route:'Karakuri software factory'},
     ],
     gpus:[
-      {idx:0,name:'RTX 3090',total:24,used:8.4,note:'Whisper pinned here',chips:[
-        {name:'Whisper STT',type:'svc',b:'service · pinned',data:{vram:'8.1 GB',role:'speech→text'}},
-        {name:'ComfyUI',type:'svc',b:'service · idle',data:{vram:'0.25 GB',role:'image / Flux'}}]},
-      {idx:1,name:'RTX 3090',total:24,used:0,burst:'VibeVoice'},
-      {idx:2,name:'RTX 3090',total:24,used:23.5,chips:[
-        {name:'Qwen3.8-27B',type:'vllm',b:'vLLM',data:{vram:'23.5 GB',quant:'W4A16',ctx:'100k',kv:'fp8'}}]},
+      {idx:0,name:'RTX 3090',total:24,used:18,note:'Whisper + ComfyUI pinned here',chips:[
+        {name:'Whisper STT',type:'svc',b:'service · pinned',data:{vram:'≈8 GB',role:'speech→text'}},
+        {name:'ComfyUI',type:'svc',b:'service · active',data:{vram:'≈10 GB',role:'image / Flux'}}]},
+      {idx:1,name:'RTX 3090',total:24,used:0.7,burst:'VibeVoice',note:'Karakuri attribution helper resident (<1 GB) · on-demand gemma3:4b lands on a free card'},
+      {idx:2,name:'RTX 3090',total:24,used:24,chips:[
+        {name:'Qwen3.8-27B',type:'vllm',b:'vLLM',data:{vram:'≈24 GB',quant:'W4A16',ctx:'100k',kv:'fp8'}}]},
       {idx:3,name:'RTX 3090',total:24,used:0,burst:'VibeVoice'},
-      {idx:4,name:'RTX 3090',total:24,used:0,burst:'VibeVoice'},
-      {idx:5,name:'RTX 3090',total:24,used:7.8,chips:[
-        {name:'gemma3:4b',type:'ollama',b:'ollama',data:{vram:'7.8 GB',quant:'Q4_K_M',ctx:'131k'}}]},
+      {idx:4,name:'RTX 3090',total:24,used:20,chips:[
+        {name:'Qwen3.6-27B',type:'vllm',b:'vLLM · TP0',data:{vram:'≈20 GB',quant:'int4 AutoRound',split:'tensor-parallel ×2 (GPU4+5)'}}]},
+      {idx:5,name:'RTX 3090',total:24,used:20,chips:[
+        {name:'Qwen3.6-27B',type:'vllm',b:'vLLM · TP1',data:{vram:'≈20 GB',quant:'int4 AutoRound',split:'tensor-parallel ×2 (GPU4+5)'}}]},
     ]},
 
   { id:'wopr', name:'WOPR', mc:'#3fb950', hw:'7 × MI50 32GB · gfx906', vendor:'amd',
@@ -216,19 +217,19 @@ const FLEET = [
     proxies:[{name:'wopr-proxy',port:'',be:'llama',route:'fronts local llama.cpp tenants → Switchboard'}],
     spans:[
       {members:[0,1],name:'Qwen3.6-35B-A3B',type:'llama',data:{quant:'Q8_0',ctx:'40k',split:'tensor-split ×2'}},
-      {members:[2,3],name:'gpt-oss-120b',type:'llama',data:{quant:'MoE GGUF',ctx:'8k',split:'tensor-split ×2'}},
+      {members:[2,3],name:'DeepSeek-R1-70B',type:'llama',data:{quant:'Q4_K_M',ctx:'32k',split:'tensor-split ×2'}},
     ],
     gpus:[
       {idx:0,name:'MI50 32GB',total:32,used:18.9},
       {idx:1,name:'MI50 32GB',total:32,used:17.7},
       {idx:2,name:'MI50 32GB',total:32,used:32.1},
       {idx:3,name:'MI50 32GB',total:32,used:29.4},
-      {idx:4,name:'MI50 32GB',total:32,used:24.0,chips:[
-        {name:'nemotron-3.5',type:'llama',b:'llama.cpp',data:{vram:'24.0 GB',ctx:'40k'}}]},
+      {idx:4,name:'MI50 32GB',total:32,used:17,chips:[
+        {name:'Qwen3.8-27B',type:'llama',b:'llama.cpp · :8085',data:{vram:'≈17 GB',quant:'IQ4_XS',ctx:'40k',serves:'Hermes brain (via Max proxy :3021→:3025) · internet fallback'}}]},
       {idx:5,name:'MI50 32GB',total:32,used:21.0,chips:[
         {name:'Qwen3.6-27B-MTP',type:'llama',b:'llama.cpp',data:{vram:'21.0 GB',quant:'IQ4_XS',ctx:'160k'}}]},
-      {idx:6,name:'MI50 32GB · reseated',total:32,used:17,note:'card repaired 2026-08-27 — now serving Muse-Glimmer, validated under load',chips:[
-        {name:'Muse-Glimmer-30B',type:'llama',b:'llama.cpp',data:{vram:'≈17 GB',quant:'Q4_K_M',ctx:'40k',serves:'Hermes agents'}}]},
+      {idx:6,name:'MI50 32GB · reseated',total:32,used:18,note:'card repaired 2026-08-27 — reseated and validated under load',chips:[
+        {name:'Muse-Glimmer-30B',type:'llama',b:'llama.cpp',data:{vram:'≈18 GB',quant:'Q4_K_M',ctx:'40k'}}]},
     ]},
 
   { id:'macstudio', name:'macstudio', mc:'#5b9dd9', hw:'Apple M-series · 256 GB unified', vendor:'apple',
@@ -291,8 +292,8 @@ const AGENTS = [
   {name:'Scotty',host:'crew node',role:'Execute · QA · architect · Telegram',points:'DEDICATED: Qwen3.8-27B on apol card1 ( llama-server) — escalation path TBD'},
   {name:'Spock',host:'crew node',role:'Execute · QA · research · Telegram',points:'"standard" tier — local qwen + gemini-2.5-flash'},
   {name:'McCoy',host:'crew node',role:'Execute · QA · diagnostics · Telegram',points:'"standard" tier — local qwen + gemini-2.5-flash'},
-  {name:'Maximilian',host:'max · Hermes',role:'Execute · QA · Telegram assistant',points:'Muse-Glimmer-30B — served from WOPR GPU6'},
-  {name:'Vincent',host:'max · Hermes',role:'Telegram assistant',points:'Muse-Glimmer-30B — served from WOPR GPU6'},
+  {name:'Maximilian',host:'max · Hermes',role:'Execute · QA · Telegram assistant',points:'Qwen3.8-27B on WOPR (via Max proxy :3021 → :3025) · internet fallback (synthetic / OpenRouter)'},
+  {name:'Vincent',host:'max · Hermes',role:'Telegram assistant',points:'Qwen3.8-27B on WOPR (via Max proxy :3021 → :3025) · internet fallback (synthetic / OpenRouter)'},
   {name:'Sulu',host:'kirk (local)',role:'Utility agent · Telegram',points:'target: paid Gemini — wiring unverified (needs a fix)'},
 ];
 
