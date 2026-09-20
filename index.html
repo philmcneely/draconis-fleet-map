@@ -78,6 +78,9 @@
   .sk{font-family:var(--mono);font-size:9.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--dim)}
   .sv{font-size:13.5px;color:var(--ink);font-variant-numeric:tabular-nums}
   .mdesc{margin:14px 0 0;font-size:13.5px;line-height:1.55;color:var(--mut);max-width:70ch}
+  .mdocs{margin:10px 0 0;font-size:12.5px;line-height:1.5}
+  .mdocs a{color:var(--llama);text-decoration:none;border-bottom:1px dotted var(--rail2)}
+  .mdocs a:hover{border-bottom-style:solid}
   .proxbar{padding:16px 24px;border-bottom:1px solid var(--rail);background:#0e141980}
   .proxies{display:flex;flex-wrap:wrap;gap:10px}
   .prox{flex:1 1 190px;min-width:180px;border:1px solid var(--rail2);border-radius:9px;background:linear-gradient(180deg,#171f26,#131a20);padding:11px 13px}
@@ -247,6 +250,7 @@ const FLEET = [
     total:32, role:'Dual Radeon VII eGPU inference',
     specs:{chassis:'T2 Mac · Linux · Thunderbolt eGPU',cpu:'12 threads',mem:'16 GiB system RAM',os:'Ubuntu 24.04 · T2 kernel'},
     desc:'apol is a Thunderbolt eGPU box — two Radeon VII cards on a T2 Mac running Linux — where each card runs one dedicated model at a fixed quant, assigned to a specific crew agent. Keeping one model resident per card gives those agents a stable, always-available local endpoint instead of competing for shared capacity.',
+    docs:[{label:'Setup — two Radeon VII, two models, and the graphs-off fix',url:'https://github.com/philmcneely/t2-egpu-linux/blob/main/article-3-two-models-one-cpu-spin.md'}],
     proxies:[{name:'llama-server ×2',port:'/',be:'llama.cpp',route:'per-card llama-server (mixa3607/gfx906) — one dedicated model per agent'}],
     gpus:[
       {idx:0,name:'Radeon VII 16GB',total:16,used:14.9,chips:[
@@ -259,6 +263,7 @@ const FLEET = [
     total:32, role:'Abliterated pair · ROCm inference',
     specs:{chassis:'Mac mini 2018 (T2) · 2× eGPU',cpu:'12 threads',mem:'64 GiB system RAM',os:'Ubuntu 24.04 · T2 kernel'},
     desc:'DrTheopolis is a T2 Mac mini 2018 running Linux (Ubuntu 24.04, t2linux-patched kernel), driving two independent 16 GB AMD RX 6800 cards over Thunderbolt eGPU enclosures — an AKiTiO Node Titan and a Razer Core X — on ROCm. The two cards are deliberately not pooled into one 32 GB device: the Thunderbolt-linked cards have no peer-to-peer path, so each serves its own Qwen3.8-27B endpoint (one stock, one abliterated). That suits A/B and side-by-side comparisons, grading sweeps, or simply doubling single-model throughput. Bringing the second card up under Linux required a doorbell-BAR (BAR2) relocation fix — without it the second card compute ring times out — documented in the public github.com/philmcneely/t2-egpu-linux repo.',
+    docs:[{label:'Setup — dual RX 6800 eGPU + doorbell-BAR (BAR2) fix',url:'https://github.com/philmcneely/t2-egpu-linux/tree/main/dual-gpu'}],
     proxies:[{name:'drtheo-proxy',port:'',be:'llama',route:'fronts 2 local per-card endpoints'}],
     gpus:[
       {idx:0,name:'RX 6800 16GB',total:16,used:14,chips:[
@@ -402,7 +407,7 @@ function renderDetail(m){
         <div class="sp"><span class="sk">Memory</span><span class="sv">${esc(m.specs.mem)}</span></div>
         <div class="sp"><span class="sk">OS</span><span class="sv">${esc(m.specs.os)}</span></div>
       </div>
-      ${m.desc?`<p class="mdesc">${esc(m.desc)}</p>`:''}</div>`:''}
+      ${m.desc?`<p class="mdesc">${esc(m.desc)}</p>`:''}${m.docs&&m.docs.length?`<p class="mdocs">📄 ${m.docs.map(d=>`<a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.label)} ↗</a>`).join(' &nbsp;·&nbsp; ')}</p>`:''}</div>`:''}
     <div class="proxbar"><p class="section-label">Fronting proxies</p><div class="proxies">${proxies}</div></div>
     <div class="gpubar"><p class="section-label">GPUs · model residency</p><div class="units">${unitsHTML(m)}</div>
       <div class="legend"><div class="row">
