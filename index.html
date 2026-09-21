@@ -217,7 +217,7 @@ const FLEET = [
   { id:'wopr', name:'WOPR', mc:'#3fb950', hw:'6 × MI50 32GB · gfx906', vendor:'amd',
     total:192, role:'Big dense-model + MoE inference',
     specs:{chassis:'Supermicro X10DRH-iT',cpu:'2× Xeon E5-2690 v4 · 28c/56t',mem:'251 GiB system RAM',os:'Ubuntu 24.04 · kernel 7.0'},
-    desc:'WOPR is the fleet’s secondary inference box — the AMD/ROCm counterpart to HAL’s NVIDIA pool, six MI50 cards of usable discrete VRAM (192 GB, down from seven after a faulty card was pulled). It runs several llama.cpp tenants at once, each pinned to one or more cards and served independently, so big dense models and MoE tenants have room to run. With only six cards, the two-card Qwen3.6-35B-A3B (its Q8 file is 34.4 GB — too big for one 32 GB card, and a tensor-split pair strands ~28 GB) is currently NOT running: that VRAM is better spent on the tenants that fit a single card, so R1-70B, Qwen3.6-27B-MTP, Qwen3.8-27B and Muse-Glimmer get the cards. Its job is to keep grading/eval sweeps, secondary chat traffic, and models that don’t need HAL’s CUDA capacity from competing for it.',
+    desc:'WOPR is the fleet’s secondary inference box — the AMD/ROCm counterpart to HAL’s NVIDIA pool, six MI50 cards of usable discrete VRAM (192 GB, down from seven after a faulty card was pulled). It runs several llama.cpp tenants at once, each pinned to one or more cards and served independently, so big dense models and MoE tenants have room to run. With only six cards, the two-card Qwen3.6-35B-A3B (its Q8 file is 34.4 GB — too big for one 32 GB card, and a tensor-split pair strands ~28 GB) is currently NOT running: that VRAM is better spent on the tenants that fit a single card, so R1-70B, Qwen3.6-27B-MTP and Qwen3.8-27B get the cards (Muse-Glimmer was decommissioned 2026-09-20; its card is now free). Its job is to keep grading/eval sweeps, secondary chat traffic, and models that don’t need HAL’s CUDA capacity from competing for it.',
     proxies:[{name:'wopr-proxy',port:'',be:'llama',route:'fronts local llama.cpp tenants → Switchboard'}],
     spans:[
       {members:[0,1],name:'DeepSeek-R1-70B',type:'llama',data:{quant:'Q4_K_M',ctx:'32k',split:'tensor-split ×2'}},
@@ -229,8 +229,7 @@ const FLEET = [
         {name:'Qwen3.6-27B-MTP',type:'llama',b:'llama.cpp · :8083',data:{vram:'≈21 GB',quant:'IQ4_XS',ctx:'160k'}}]},
       {idx:3,name:'MI50 32GB',total:32,used:17,chips:[
         {name:'Qwen3.8-27B',type:'llama',b:'llama.cpp · :8085',data:{vram:'≈17 GB',quant:'IQ4_XS',ctx:'40k',serves:'Hermes brain (Max proxy :3021 → wopr) · internet fallback'}}]},
-      {idx:4,name:'MI50 32GB',total:32,used:18,chips:[
-        {name:'Muse-Glimmer-30B',type:'llama',b:'llama.cpp',data:{vram:'≈18 GB',quant:'Q4_K_M',ctx:'40k'}}]},
+      {idx:4,name:'MI50 32GB',total:32,used:0,burst:'free',note:'idle — was Muse-Glimmer-30B, decommissioned 2026-09-20 (failed the tool-call test, no consumers)'},
       {idx:5,name:'MI50 32GB',total:32,used:0,burst:'free',note:'idle — was half the Qwen3.6-35B-A3B pair; that MoE is parked (34.4 GB Q8 needs 2 cards and strands ~28 GB — not worth it on six)'},
     ]},
 
