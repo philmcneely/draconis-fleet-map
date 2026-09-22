@@ -248,27 +248,27 @@ const FLEET = [
   { id:'apol', name:'apol', mc:'#22b8cf', hw:'2 × Radeon VII 16GB · T2 Linux', vendor:'amd',
     total:32, role:'Dual Radeon VII eGPU inference',
     specs:{chassis:'T2 Mac · Linux · Thunderbolt eGPU',cpu:'12 threads',mem:'16 GiB system RAM',os:'Ubuntu 24.04 · T2 kernel'},
-    desc:'apol is a Thunderbolt eGPU box — two Radeon VII cards on a T2 Mac running Linux — where each card runs one dedicated model at a fixed quant, assigned to a specific crew agent. Keeping one model resident per card gives those agents a stable, always-available local endpoint instead of competing for shared capacity.',
+    desc:'apol is a Thunderbolt eGPU box — two Radeon VII cards on a T2 Mac running Linux — where each card runs one dedicated model at a fixed quant, assigned to a specific crew agent. Keeping one model resident per card gives those agents a stable, always-available local endpoint instead of competing for shared capacity. Each card now serves 32k context (q8 KV cache) at ~23 tok/s; the model is pinned resident (mlock) so its pages are never evicted — without that, the KV cache thrashes the amdgpu memory manager and generation collapses. Usage is recorded locally and pulled by the fleet cost dashboard; no cloud models, ever.',
     docs:[{label:'Setup — two Radeon VII, two models, and the graphs-off fix',url:'https://github.com/philmcneely/t2-egpu-linux/blob/main/article-3-two-models-one-cpu-spin.md'}],
     proxies:[{name:'llama-server ×2',port:'/',be:'llama.cpp',route:'per-card llama-server (mixa3607/gfx906) — one dedicated model per agent'}],
     gpus:[
-      {idx:0,name:'Radeon VII 16GB',total:16,used:14.9,chips:[
-        {name:'Qwen3.8-27B',type:'llama',b:'card0 · llama-server',data:{vram:'≈14.9 GB',quant:'IQ4_XS',ctx:'8k',serves:'free (next crew agent)'}}]},
-      {idx:1,name:'Radeon VII 16GB',total:16,used:14.9,chips:[
-        {name:'Qwen3.8-27B',type:'llama',b:'card1 · llama-server',data:{vram:'≈14.9 GB',quant:'IQ4_XS',ctx:'8k',serves:'Scotty (dedicated)'}}]},
+      {idx:0,name:'Radeon VII 16GB',total:16,used:15.7,chips:[
+        {name:'Qwen3.8-27B',type:'llama',b:'card0 · llama-server',data:{vram:'≈15.7 GB',quant:'UD-IQ4_XS',ctx:'32k',serves:'free (next crew agent) · ~23 tok/s'}}]},
+      {idx:1,name:'Radeon VII 16GB',total:16,used:15.7,chips:[
+        {name:'Qwen3.8-27B',type:'llama',b:'card1 · llama-server',data:{vram:'≈15.7 GB',quant:'UD-IQ4_XS',ctx:'32k',serves:'Scotty (dedicated) · ~23 tok/s'}}]},
     ]},
 
   { id:'drtheopolis', name:'DrTheopolis', mc:'#a371f7', hw:'2 × RX 6800 · Linux · ROCm', vendor:'amd',
     total:32, role:'Abliterated pair · ROCm inference',
     specs:{chassis:'Mac mini 2018 (T2) · 2× eGPU',cpu:'12 threads',mem:'64 GiB system RAM',os:'Ubuntu 24.04 · T2 kernel'},
-    desc:'DrTheopolis is a T2 Mac mini 2018 running Linux (Ubuntu 24.04, t2linux-patched kernel), driving two independent 16 GB AMD RX 6800 cards over Thunderbolt eGPU enclosures — an AKiTiO Node Titan and a Razer Core X — on ROCm. The two cards are deliberately not pooled into one 32 GB device: the Thunderbolt-linked cards have no peer-to-peer path, so each serves its own Qwen3.8-27B endpoint (one stock, one abliterated). That suits A/B and side-by-side comparisons, grading sweeps, or simply doubling single-model throughput. Bringing the second card up under Linux required a doorbell-BAR (BAR2) relocation fix — without it the second card compute ring times out — documented in the public github.com/philmcneely/t2-egpu-linux repo.',
+    desc:'DrTheopolis is a T2 Mac mini 2018 running Linux (Ubuntu 24.04, t2linux-patched kernel), driving two independent 16 GB AMD RX 6800 cards over Thunderbolt eGPU enclosures — an AKiTiO Node Titan and a Razer Core X — on ROCm. The two cards are deliberately not pooled into one 32 GB device: the Thunderbolt-linked cards have no peer-to-peer path, so each serves its own Qwen3.8-27B endpoint (one stock, one abliterated). That suits A/B and side-by-side comparisons, grading sweeps, or simply doubling single-model throughput. Both cards now run 32k context at ~20 tok/s — reaching that took two fixes: forcing the RX 6800s to peak clocks (an RDNA2 quirk left the core clock pinned at 500 MHz under compute load, halving speed while the GPU read 99% busy), and matching the fast UD-IQ4_XS quant on both cards (the abliterated card now uses huihui\'s UD-IQ4_XS instead of a slower-packed requant). Bringing the second card up under Linux required a doorbell-BAR (BAR2) relocation fix — without it the second card compute ring times out — documented in the public github.com/philmcneely/t2-egpu-linux repo.',
     docs:[{label:'Setup — dual RX 6800 eGPU + doorbell-BAR (BAR2) fix',url:'https://github.com/philmcneely/t2-egpu-linux/tree/main/dual-gpu'}],
     proxies:[{name:'drtheo-proxy',port:'',be:'llama',route:'fronts 2 local per-card endpoints'}],
     gpus:[
-      {idx:0,name:'RX 6800 16GB',total:16,used:14,chips:[
-        {name:'Qwen3.8-27B',type:'llama',b:'card0 · llama.cpp (ROCm)',data:{vram:'≈14 GB',quant:'IQ4_XS',ctx:'4k',build:'stock'}}]},
-      {idx:1,name:'RX 6800 16GB',total:16,used:14,chips:[
-        {name:'Qwen3.8-27B',ab:true,type:'llama',b:'card1 · llama.cpp (ROCm)',data:{vram:'≈14 GB',quant:'IQ4_XS',ctx:'4k',build:'Heretic · abliterated'}}]},
+      {idx:0,name:'RX 6800 16GB',total:16,used:14.5,chips:[
+        {name:'Qwen3.8-27B',type:'llama',b:'card0 · ollama (ROCm)',data:{vram:'≈14.5 GB',quant:'UD-IQ4_XS',ctx:'32k',build:'stock · ~20 tok/s'}}]},
+      {idx:1,name:'RX 6800 16GB',total:16,used:15.2,chips:[
+        {name:'Qwen3.8-27B',ab:true,type:'llama',b:'card1 · ollama (ROCm)',data:{vram:'≈15.2 GB',quant:'UD-IQ4_XS',ctx:'32k',build:'Heretic (huihui abliterated) · ~20 tok/s'}}]},
     ]},
 ];
 
