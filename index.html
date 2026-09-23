@@ -217,20 +217,20 @@ const FLEET = [
   { id:'wopr', name:'WOPR', mc:'#3fb950', hw:'6 × MI50 32GB · gfx906', vendor:'amd',
     total:192, role:'MoE + dense inference · Karakuri coder escalation',
     specs:{chassis:'Supermicro X10DRH-iT',cpu:'2× Xeon E5-2690 v4 · 28c/56t',mem:'251 GiB system RAM',os:'Ubuntu 24.04 · kernel 7.0'},
-    desc:'WOPR is the fleet’s AMD/ROCm inference box — the counterpart to HAL’s NVIDIA pool, six MI50 (gfx906) cards of usable discrete VRAM (192 GB; a seventh GPU slot is deliberately left disconnected — a Radeon VII that won’t map cleanly on this board — leaving 6× MI50 in service). It now runs on an optimized ROCm 7.2 ollama build for gfx906, and its headline tenant is Qwen3.8-Flash-Next — a ≈177B (qwen4exp) MoE, ~6B active, Q4_K_M (262k native context, code-strong) spread across four cards at 256k context and ≈28–30 tok/s warm, serving the Karakuri coder’s escalation tier (pinned resident, keep_alive ∞). The remaining two cards each host a single-card dense tenant (Qwen3.8-27B and Qwen3.6-27B). The layout follows the box’s one hard constraint: it has no xGMI / Infinity-Fabric bridge, so a big DENSE model tensor-split across cards is throttled by PCIe — but an MoE like Flash-Next is active-params-bound and runs fast across cards, which is why the MoE gets the four-card span and the dense models stay single-card. Its job is to serve the coder escalation tier plus secondary chat and eval traffic that doesn’t need HAL’s CUDA capacity.',
-    proxies:[{name:'wopr-proxy',port:'',be:'ollama',route:'fronts local ollama tenants → Switchboard'}],
+    desc:'WOPR is the fleet’s AMD/ROCm inference box — the counterpart to HAL’s NVIDIA pool, six MI50 (gfx906) cards of usable discrete VRAM (192 GB; a seventh 16 GB Radeon VII was removed after it wouldn’t map cleanly on this board and caused instability, leaving 6× MI50 in service — all six healthy on the PCIe bus). It now runs on an optimized ROCm 7.2 ollama build for gfx906, and its headline tenant is Qwen3.8-Flash-Next — a ≈177B (qwen4exp) MoE, ~6B active, Q4_K_M (262k native context, code-strong) spread across four cards at 256k context and ~21 tok/s, serving the Karakuri coder’s escalation tier (pinned resident, keep_alive ∞). The remaining two cards each host a single-card dense tenant (Qwen3.6-27B on card 4, Qwen3.8-27B on card 5). A hard rule holds here: no model ever runs on CPU — on-box guards refuse to start a tenant whose GPU is absent and red-alert instead. The layout follows the box’s one hard constraint: it has no xGMI / Infinity-Fabric bridge, so a big DENSE model tensor-split across cards is throttled by PCIe — but an MoE like Flash-Next is active-params-bound and runs fast across cards, which is why the MoE gets the four-card span and the dense models stay single-card. Its job is to serve the coder escalation tier plus secondary chat and eval traffic that doesn’t need HAL’s CUDA capacity.',
+    proxies:[{name:'llm-proxy-mi50',port:'3025',be:'ollama',route:'fronts local ollama tenants → Switchboard'}],
     spans:[
-      {members:[0,1,2,3],name:'Qwen3.8-Flash-Next',type:'ollama',data:{params:'≈177B MoE (qwen4exp) · ~6B active',quant:'Q4_K_M GGUF',ctx:'256k',split:'across 4 cards · --parallel 4',tput:'≈28–30 tok/s (warm)',serves:'Karakuri coder escalation',state:'pinned hot · keep_alive ∞'}},
+      {members:[0,1,2,3],name:'Qwen3.8-Flash-Next',type:'ollama',data:{params:'≈177B MoE (qwen4exp) · ~6B active',quant:'Q4_K_M GGUF',ctx:'256k',split:'across 4 cards · --parallel 4',tput:'~21 tok/s',serves:'Karakuri coder escalation',state:'pinned hot · keep_alive ∞'}},
     ],
     gpus:[
       {idx:0,name:'MI50 32GB',total:32,used:28},
       {idx:1,name:'MI50 32GB',total:32,used:28},
       {idx:2,name:'MI50 32GB',total:32,used:28},
       {idx:3,name:'MI50 32GB',total:32,used:27},
-      {idx:4,name:'MI50 32GB',total:32,used:17,chips:[
-        {name:'Qwen3.8-27B',type:'ollama',b:'ollama · ROCm 7.2',data:{vram:'≈17 GB',quant:'IQ4_XS',ctx:'40k'}}]},
-      {idx:5,name:'MI50 32GB',total:32,used:21,chips:[
-        {name:'Qwen3.6-27B',type:'ollama',b:'ollama · ROCm 7.2',data:{vram:'≈21 GB',quant:'IQ4_XS',ctx:'160k'}}]},
+      {idx:4,name:'MI50 32GB',total:32,used:21,chips:[
+        {name:'Qwen3.6-27B',type:'ollama',b:'ollama · ROCm 7.2 · :8083',data:{vram:'≈21 GB',quant:'IQ4_XS',ctx:'160k'}}]},
+      {idx:5,name:'MI50 32GB',total:32,used:17,chips:[
+        {name:'Qwen3.8-27B',type:'ollama',b:'ollama · ROCm 7.2 · :8085',data:{vram:'≈17 GB',quant:'IQ4_XS',ctx:'40k'}}]},
     ]},
 
   { id:'macstudio', name:'macstudio', mc:'#5b9dd9', hw:'Apple M-series · 256 GB unified', vendor:'apple',
