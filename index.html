@@ -191,7 +191,7 @@ const FLEET = [
   { id:'hal9000', name:'HAL9000', mc:'#e5484d', hw:'6 × RTX 3090 · 144 GB', vendor:'nvidia',
     total:144, role:'Central inference · Switchboard hub',
     specs:{chassis:'Supermicro X10DRI-T',cpu:'2× Xeon E5-2690 v4 · 28c/56t',mem:'503 GiB system RAM',os:'Ubuntu 24.04 · kernel 7.0'},
-    desc:'HAL9000 is the fleet’s primary compute node and the home of its “free CUDA tier” — the six pooled RTX 3090s carry local LLM inference (two local vLLM models — a W4A16 Qwen3.8-27B on one card and a tensor-parallel Qwen3.6-27B across two more — plus on-demand gemma3:4b, speech-to-text, image generation, and audio work), always on GPU and never falling back to CPU. It also hosts most of the fleet’s backend — the LLM proxy and cost dashboard, the shared memory service, and the Karakuri software factory — all running side by side as independent containers. There is no central orchestrator: every box, this one included, manages its own services.',
+    desc:'HAL9000 is the fleet’s primary compute node and the home of its “free CUDA tier” — the six pooled RTX 3090s carry local LLM inference (two single-card vLLM replicas of a W4A16 Qwen3.8-27B and a Qwen3.8-Flash-Next on llama.cpp on a third card — plus on-demand gemma3:4b, speech-to-text, image generation, and audio work), always on GPU and never falling back to CPU. It also hosts most of the fleet’s backend — the LLM proxy and cost dashboard, the shared memory service, and the Karakuri software factory (which runs on its own isolated, unprivileged Docker daemon, separate from production) — all running side by side as independent containers. Two cards are held clear for VibeVoice audio bursts. There is no central orchestrator: every box, this one included, manages its own services.',
     proxies:[
       {name:'openwebui-vllm',port:'',be:'vllm',route:'local · qwen3.8-27b'},
       {name:'openwebui-ollama',port:'',be:'ollama',route:'local · gemma3:4b'},
@@ -199,32 +199,32 @@ const FLEET = [
       {name:'openwebui',port:'',be:'cloud',route:'OpenRouter passthrough'},
       {name:'karakuri',port:'karakuri',be:'vllm',route:'Karakuri software factory'},
     ],
-    spans:[
-      {members:[4,5],name:'Qwen3.6-27B',type:'vllm',data:{quant:'int4 AutoRound',ctx:'256k',split:'tensor-parallel ×2'}},
-    ],
+    spans:[],
     gpus:[
-      {idx:0,name:'RTX 3090',total:24,used:18,note:'Whisper pinned · ComfyUI/Flux bursts into the rest',chips:[
-        {name:'Whisper STT',type:'svc',b:'service · pinned',data:{vram:'≈8 GB',role:'speech→text'}},
+      {idx:0,name:'RTX 3090',total:24,used:21.8,note:'Whisper pinned · ComfyUI/Flux bursts into the rest',chips:[
+        {name:'Whisper STT ×2',type:'svc',b:'service · pinned',data:{vram:'≈11 GB',role:'speech→text (API + OpenWebUI)'}},
         {name:'ComfyUI',type:'svc',b:'service · active',data:{vram:'≈10 GB',role:'image / Flux'}}]},
-      {idx:1,name:'RTX 3090',total:24,used:0.7,burst:'VibeVoice',note:'Karakuri attribution helper resident (<1 GB)'},
-      {idx:2,name:'RTX 3090',total:24,used:24,chips:[
-        {name:'Qwen3.8-27B',type:'vllm',b:'vLLM',data:{vram:'≈24 GB',quant:'W4A16',ctx:'100k',kv:'fp8'}}]},
-      {idx:3,name:'RTX 3090',total:24,used:0,burst:'VibeVoice'},
-      {idx:4,name:'RTX 3090',total:24,used:20},
-      {idx:5,name:'RTX 3090',total:24,used:20},
+      {idx:1,name:'RTX 3090',total:24,used:0,burst:'VibeVoice',note:'reserved for VibeVoice'},
+      {idx:2,name:'RTX 3090',total:24,used:0,burst:'VibeVoice',note:'reserved for VibeVoice'},
+      {idx:3,name:'RTX 3090',total:24,used:24,chips:[
+        {name:'Qwen3.8-Flash-Next',type:'llama',b:'llama.cpp',data:{vram:'≈24 GB',quant:'IQ3_S · MoE'}}]},
+      {idx:4,name:'RTX 3090',total:24,used:23.9,chips:[
+        {name:'Qwen3.8-27B',type:'vllm',b:'vLLM · replica A',data:{vram:'≈24 GB',quant:'W4A16',kv:'fp8'}}]},
+      {idx:5,name:'RTX 3090',total:24,used:22.3,chips:[
+        {name:'Qwen3.8-27B',type:'vllm',b:'vLLM · replica B',data:{vram:'≈22 GB',quant:'W4A16',kv:'fp8'}}]},
     ]},
 
   { id:'wopr', name:'WOPR', mc:'#3fb950', hw:'6 × MI50 32GB · gfx906', vendor:'amd',
     total:192, role:'MoE + dense inference · Karakuri coder escalation',
     specs:{chassis:'Supermicro X10DRH-iT',cpu:'2× Xeon E5-2690 v4 · 28c/56t',mem:'251 GiB system RAM',os:'Ubuntu 24.04 · kernel 7.0'},
-    desc:'WOPR is the fleet’s AMD/ROCm inference box — the counterpart to HAL’s NVIDIA pool: six MI50 (gfx906) cards, 192 GB of usable discrete VRAM (a seventh 16 GB Radeon VII was removed after it wouldn’t map cleanly on this board and caused instability — all six MI50 are healthy on the PCIe bus). It runs a llama.cpp build tuned for gfx906, and after a five-model bake-off each card now hosts its own single-card tenant: a code-specialized MoE (Qwen3-Coder-30B-A3B) and a general MoE (Qwen3.6-35B-A3B), two copies of Swift-Qwen3.8-27B (dense), and the two original dense models (Qwen3.6-27B, Qwen3.8-27B) — most at Q4_K_M and up to 256k context, serving the Karakuri coder’s escalation tier plus secondary chat and eval traffic that doesn’t need HAL’s CUDA capacity. A hard rule holds here: no model ever runs on CPU — on-box guards refuse to start a tenant whose GPU is absent and red-alert instead. The box has no xGMI / Infinity-Fabric bridge, so a dense model tensor-split across cards is throttled by PCIe; every tenant therefore stays single-card (the earlier four-card MoE experiment, Flash-Next, has been retired). Resilience: these gfx906 cards can spontaneously wedge their SMU — the card stays on the bus but its firmware mailbox stops responding — so an on-box watchdog reads kernel faults and auto-recovers a wedged card with a rate-limited cold power cycle, never a CPU fallback and with no human needed.',
+    desc:'WOPR is the fleet’s AMD/ROCm inference box — the counterpart to HAL’s NVIDIA pool: six MI50 (gfx906) cards, 192 GB of usable discrete VRAM (a seventh 16 GB Radeon VII was removed after it wouldn’t map cleanly on this board and caused instability — all six MI50 are healthy on the PCIe bus). It runs a llama.cpp build tuned for gfx906, and after a five-model bake-off each card now hosts its own single-card tenant: two copies of a code-specialized MoE (Qwen3-Coder-30B-A3B), two copies of Swift-Qwen3.8-27B (dense), and the two original dense models (Qwen3.6-27B, Qwen3.8-27B) — most at Q4_K_M and up to 256k context, serving the Karakuri coder’s escalation tier plus secondary chat and eval traffic that doesn’t need HAL’s CUDA capacity. A hard rule holds here: no model ever runs on CPU — on-box guards refuse to start a tenant whose GPU is absent and red-alert instead. The box has no xGMI / Infinity-Fabric bridge, so a dense model tensor-split across cards is throttled by PCIe; every tenant therefore stays single-card (the earlier four-card MoE experiment, Flash-Next, has been retired). Resilience: these gfx906 cards can spontaneously wedge their SMU — the card stays on the bus but its firmware mailbox stops responding — so an on-box watchdog reads kernel faults and auto-recovers a wedged card with a rate-limited cold power cycle, never a CPU fallback and with no human needed.',
     proxies:[{name:'llm-proxy-mi50',port:'3025',be:'llama.cpp',route:'fronts local llama.cpp tenants → Switchboard'}],
     spans:[],
     gpus:[
-      {idx:0,name:'MI50 32GB',total:32,used:27,chips:[
-        {name:'Qwen3-Coder-30B-A3B',type:'llama',b:'llama.cpp gfx906 · :8086',data:{vram:'≈27 GB',quant:'Q4_K_M · MoE ~3B active',ctx:'256k',serves:'Karakuri coder tier'}}]},
-      {idx:1,name:'MI50 32GB',total:32,used:24,chips:[
-        {name:'Qwen3.6-35B-A3B',type:'llama',b:'llama.cpp gfx906 · :8087',data:{vram:'≈24 GB',quant:'Q4_K_M · MoE ~3B active',ctx:'256k'}}]},
+      {idx:0,name:'MI50 32GB',total:32,used:25.5,chips:[
+        {name:'Qwen3-Coder-30B-A3B',type:'llama',b:'llama.cpp gfx906 · :8086',data:{vram:'≈25 GB',quant:'Q4_K_M · MoE ~3B active',ctx:'256k',serves:'Karakuri coder tier'}}]},
+      {idx:1,name:'MI50 32GB',total:32,used:25.5,chips:[
+        {name:'Qwen3-Coder-30B-A3B',type:'llama',b:'llama.cpp gfx906 · 2nd coder replica',data:{vram:'≈25 GB',quant:'Q4_K_M · MoE ~3B active',ctx:'256k',serves:'Karakuri coder tier'}}]},
       {idx:2,name:'MI50 32GB',total:32,used:23,chips:[
         {name:'Swift-Qwen3.8-27B',type:'llama',b:'llama.cpp gfx906 · :8088',data:{vram:'≈23 GB',quant:'Q4_K_M · dense',ctx:'256k'}}]},
       {idx:3,name:'MI50 32GB',total:32,used:23,chips:[
