@@ -10,6 +10,7 @@ Source of truth for the per-machine Claude Code personas (rolled out 2026-10-20,
 | scotty / spock / mccoy | scotty.md / spock.md / mccoy.md | Scotty / Spock / McCoy | crew routes via local :3020 (unchanged) |
 | max | maximilian.md | Maximilian | glm-5.2 via settings env (unchanged) |
 | apol / drtheopolis | apol.md / theopolis.md | Apol / Dr. Theopolis | `auto` via max's :3020 (unchanged) |
+| beelink | bender.md | Bender | `openrouter/deepseek/deepseek-v4-flash` via beelink's own :3020 (`~/.fleet-claude-session.sh`; usage_log machine=beelink). `auto` and crew-coder are not usable on beelink, see fleet-beelink OPERATIONS.md |
 
 Why output styles: eval on HAL (110 headless cases) + Claude Code docs. `--agent` replaces the whole system prompt (rejected); CLAUDE.md is a user message (weaker); output style with `keep-coding-instructions: true` keeps the coding guidance. Haiku held character poorly and once worked around a blocked command, so Anthropic-direct boxes run Sonnet (Phil: keep usage light, escalate by hand).
 

@@ -1,6 +1,6 @@
 # Persona rollout recipe (2026-10-20, approved by Phil)
 
-Persona files (output styles) are in this directory: wopr.md (name "WOPR"), m5.md ("M-5"), scotty.md ("Scotty"), spock.md ("Spock"), mccoy.md ("McCoy"), maximilian.md ("Maximilian"), apol.md ("Apol"), theopolis.md ("Dr. Theopolis"). The `name:` frontmatter value is what goes in settings, exact and case-sensitive.
+Persona files (output styles) are in this directory: wopr.md (name "WOPR"), m5.md ("M-5"), scotty.md ("Scotty"), spock.md ("Spock"), mccoy.md ("McCoy"), maximilian.md ("Maximilian"), apol.md ("Apol"), theopolis.md ("Dr. Theopolis"), bender.md ("Bender", beelink, added 2026-10-20). The `name:` frontmatter value is what goes in settings, exact and case-sensitive.
 
 Proven on HAL tonight (110-case eval): output style in `~/.claude/output-styles/<file>.md` + `"outputStyle": "<name>"` loaded at session start. `--agent` replaces the whole system prompt: do not use. Interactive check: `/output-style` lists the active style as "(current)".
 
