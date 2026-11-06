@@ -181,6 +181,10 @@ const N = [
   specs:{CPU:'Intel i3-N305',RAM:'32 GiB',OS:'Ubuntu 24.04',Nets:'both subnets + overlay'},
   desc:'The workflow automation hub (n8n). Multi-homed on both subnets plus a 10.100.x overlay — deliberately kept to automation, not new services.'},
 
+ {id:'oumax',name:'oumax',cat:'auto',lan:'both',ip:'A …5 · B …34',role:'Home Assistant host · fleet node',
+  specs:{Host:'Desktop PC',RAM:'15 GiB',Disk:'468 GB',OS:'Ubuntu 24.04.3',Nets:'both subnets',Node:'own llm-proxy :3020, Claude Code, herdr hub machine'},
+  desc:'Runs Home Assistant in a VirtualBox VM (a deliberate choice). Fleet node since 2026-11-06 (user maxwellsmart, passwordless sudo). The VM was powered off from 2026-06-21 because VirtualBox 7.2.2 would not build for kernel 7.0.'},
+
  // --- LAN-B compute (eGPU utility) ---
  {id:'drtheopolis',name:'DrTheopolis',cat:'compute',lan:'B',ip:'…4',role:'Dual-eGPU utility inference',
   specs:{Host:'Mac mini 2018 · i7 6c/12t',RAM:'16 GiB',GPU:'2× RX 6800 · 32 GB',OS:'Ubuntu 24.04 · T2 kernel'},link:'index.html',
