@@ -166,6 +166,9 @@ const N = [
  {id:'macstudio',name:'Mac Studio',cat:'compute',lan:'A',ip:'…240',role:'Big-unified-memory inference',
   specs:{CPU:'M3 Ultra · 28-core',RAM:'256 GB unified',GPU:'Apple M3 Ultra (Metal)',OS:'macOS 26.2'},link:'index.html',
   desc:'The single largest addressable memory pool in the fleet — hosts models too big for any one GPU. Currently serves DeepSeek V4 Flash.'},
+ {id:'csm101',name:'CSM101',cat:'compute',lan:'A',ip:'…236',role:'Vega II Metal inference',
+  specs:{CPU:'Xeon W-3245 · 16c/32t',RAM:'192 GB',GPU:'4× Radeon Pro Vega II · 128 GB',OS:'macOS 26.7.2'},link:'index.html',
+  desc:'A 2019 Mac Pro running Qwen3.6-35B-A3B (fast, long prompts) and abliterated Qwen3.8-Flash-Next on ToshLLM’s llama.cpp, fronted by its own llm-proxy :3025. Fleet node since 2026-11-10.'},
  // --- LAN-A storage ---
  {id:'yarr',name:'Yarr',cat:'storage',lan:'A',ip:'…212',role:'Bulk storage (SMB)',
   specs:{Host:'Mac mini 2018',RAM:'16 GiB',Disk:'~48 disks ≈ 563 TB',OS:'macOS 11'},
