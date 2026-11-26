@@ -1,189 +1,248 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Draconis Fleet — LLM Map</title></head><body><title>Fleet LLM Map</title>
+<!doctype html><html lang="en" data-look="rack"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fleet LLM Map</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&display=swap">
+<script>
+/* pick the look before first paint: ?look= wins, then the saved choice, then rack */
+(function(){var l=null;try{l=new URLSearchParams(location.search).get('look')||localStorage.getItem('fleetmap-look')}catch(e){}
+if(l==='rack'||l==='ledger')document.documentElement.dataset.look=l;})();
+</script>
 <style>
+  /* palette shared with philmcneely.github.io/systems (warm ink + paper), status colours kept */
   :root{
-    --bg:#0b0f12; --bg2:#0f151a; --card:#151b21; --card2:#1a222a;
-    --rail:#25303a; --rail2:#313e49;
-    --ink:#d9e3e9; --mut:#7e8f9a; --dim:#526270;
-    --ok:#3fb950; --warn:#d29922; --hot:#e5484d;
-    --vllm:#7b8cff; --ollama:#4fd0c8; --svc:#c98bdb; --llama:#f0a868; --cloud:#f0a868;
+    --ink:#17140f; --ink2:#1d1913; --line:#3a3227; --line2:#5a4f3e;
+    --paper:#ece4d5; --dim:#b3a892; --faint:#857a65;
+    --ox:#c05545;
+    --hot:#e0574a; --warn:#d9a23a; --ok:#6fb26f; --svc:#a68ad8; --cyan:#46b5c8;
     --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
-    --sans:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
-    --accent:#e5484d;
+    --cond:'IBM Plex Sans Condensed','Arial Narrow',sans-serif;
+    --grot:'Archivo','Arial Narrow',sans-serif;
+    color-scheme:dark;
   }
   *{box-sizing:border-box}
   html,body{margin:0}
-  body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.4;padding:clamp(14px,2.6vw,36px);
-    background-image:radial-gradient(1100px 520px at 82% -12%,#16202799,transparent)}
-  .wrap{max-width:1180px;margin:0 auto}
+  body{background:var(--ink);color:var(--paper);font:15px/1.45 var(--cond);-webkit-font-smoothing:antialiased;padding:clamp(16px,3vw,40px) clamp(16px,3vw,40px) 48px}
+  [data-look="rack"] body{background-image:linear-gradient(#ece4d50a 1px,transparent 1px),linear-gradient(90deg,#ece4d50a 1px,transparent 1px);background-size:24px 24px}
+  [data-look="ledger"] body{font-family:var(--grot)}
+  .wrap{max-width:1240px;margin:0 auto}
   a{color:inherit}
-  .section-label{font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:var(--dim);margin:0 0 11px;font-weight:600}
+  button{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--ox);outline-offset:2px}
+  .hide{display:none!important}
+  .k{font:500 10.5px var(--mono);text-transform:uppercase;letter-spacing:.09em;color:var(--faint)}
+  .mono{font-family:var(--mono)}
 
-  .topbar{display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap}
-  .topbar h1{font-size:19px;margin:0;font-weight:700;letter-spacing:.4px}
-  .topbar .sub{font-family:var(--mono);font-size:12px;color:var(--mut)}
-  .crumb{font-family:var(--mono);font-size:12.5px;color:var(--mut)}
-  .crumb button{font:inherit;color:var(--ink);background:none;border:none;cursor:pointer;padding:0;border-bottom:1px dotted var(--rail2)}
-  .crumb button:hover{color:#fff}
-  .back{margin-left:auto}
+  /* ---------- masthead ---------- */
+  .mast{display:grid;grid-template-columns:1fr auto;align-items:end;gap:18px 28px;padding-bottom:16px}
+  .kick{font:500 11.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ox)}
+  .mast h1{margin:8px 0 0;line-height:.95}
+  .mast .sub{font:12.5px var(--mono);color:var(--dim);margin-top:10px}
+  .lookctl{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+  .look{display:flex;border:1.5px solid var(--line2)}
+  .look button{background:none;border:0;padding:7px 16px;cursor:pointer;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+  .look button+button{border-left:1.5px solid var(--line2)}
+  .look button[aria-checked="true"]{background:var(--paper);color:var(--ink)}
+  .look button:hover{color:var(--paper)} .look button[aria-checked="true"]:hover{color:var(--ink)}
+  [data-look="rack"] .mast{border:1.5px solid var(--line2);border-bottom:0;padding:22px 24px 18px;background:#17140fd9}
+  [data-look="rack"] .mast h1{font:700 44px/1 var(--cond);letter-spacing:-.01em}
+  [data-look="ledger"] .mast{border-bottom:6px solid var(--paper)}
+  [data-look="ledger"] .mast h1{font-family:var(--grot);font-stretch:68%;font-weight:900;font-size:clamp(56px,8.4vw,118px);letter-spacing:-.03em;text-transform:uppercase;line-height:.86}
 
-  .tabs{display:flex;gap:6px;margin-bottom:22px;border-bottom:1px solid var(--rail);flex-wrap:wrap}
-  .tab{font:inherit;font-size:13px;color:var(--mut);background:none;border:none;border-bottom:2px solid transparent;padding:8px 14px 10px;cursor:pointer;letter-spacing:.3px}
-  .tab:hover{color:var(--ink)}
-  .tab.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
-  .tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+  /* ---------- tabs ---------- */
+  .tabs{display:flex;flex-wrap:wrap;align-items:stretch;margin-bottom:26px}
+  .tab,.backbtn{background:none;cursor:pointer;padding:9px 16px;font:500 12.5px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}
+  .tab:hover,.backbtn:hover{color:var(--paper)}
+  .tab[aria-selected="true"]{color:var(--paper)}
+  .backbtn{margin-left:auto}
+  [data-look="rack"] .tabs{border:1.5px solid var(--line2)}
+  [data-look="rack"] .tab{border:0;border-right:1.5px solid var(--line2)}
+  [data-look="rack"] .tab[aria-selected="true"]{background:var(--paper);color:var(--ink)}
+  [data-look="rack"] .backbtn{border:0;border-left:1.5px solid var(--line2)}
+  [data-look="ledger"] .tabs{gap:2px;margin-top:14px}
+  [data-look="ledger"] .tab,[data-look="ledger"] .backbtn{border:2px solid var(--paper)}
+  [data-look="ledger"] .tab[aria-selected="true"]{background:var(--paper);color:var(--ink)}
 
-  /* aggregate */
-  .agg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
-  @media(max-width:760px){.agg{grid-template-columns:repeat(2,1fr)}}
-  .stat{border:1px solid var(--rail);border-radius:11px;background:linear-gradient(180deg,var(--bg2),var(--bg));padding:15px 16px}
-  .stat .k{font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim)}
-  .stat .v{font-family:var(--mono);font-size:24px;font-weight:600;margin-top:7px;font-variant-numeric:tabular-nums}
-  .stat .v small{font-size:13px;color:var(--mut);font-weight:400}
-  .stat.free .v{color:var(--ok)}
-  .stat .note{font-family:var(--mono);font-size:10.5px;color:var(--mut);margin-top:5px}
+  /* ---------- totals ---------- */
+  .totals{display:grid;grid-template-columns:repeat(4,1fr);margin-bottom:30px}
+  .tot b{display:block;font-variant-numeric:tabular-nums}
+  .tot .note{font:11.5px var(--mono);color:var(--dim);margin-top:4px}
+  .tot.zero b{color:var(--hot)}
+  [data-look="rack"] .totals{border:1.5px solid var(--line2);margin-top:-27px}
+  [data-look="rack"] .tot{padding:12px 16px;border-right:1px solid var(--line2)}
+  [data-look="rack"] .tot:last-child{border-right:0}
+  [data-look="rack"] .tot b{font:600 28px/1.1 var(--cond);margin-top:4px}
+  [data-look="rack"] .tot b small{font-size:15px;font-weight:500;color:var(--dim)}
+  [data-look="ledger"] .totals{border-bottom:2px solid var(--paper);margin-top:-26px}
+  [data-look="ledger"] .tot{padding:20px 20px 16px 0;border-right:1px solid var(--line2)}
+  [data-look="ledger"] .tot+.tot{padding-left:20px}
+  [data-look="ledger"] .tot:last-child{border-right:0}
+  [data-look="ledger"] .tot b{font-family:var(--grot);font-stretch:68%;font-weight:800;font-size:clamp(52px,6vw,80px);line-height:.9;letter-spacing:-.03em}
+  [data-look="ledger"] .tot b small{font-size:24px;font-weight:600;letter-spacing:0;margin-left:3px}
+  [data-look="ledger"] .tot .k{display:none}
+  .section-label{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.12em;color:var(--faint);margin:0 0 14px}
 
-  /* overview: full machine blocks — each shows its GPU boxes + models inline */
-  .mblock{border:1px solid var(--rail);border-top:3px solid var(--mc);border-radius:13px;background:linear-gradient(180deg,var(--bg2),var(--bg));margin-bottom:16px;overflow:hidden}
-  .mbhead{display:flex;align-items:center;gap:11px;padding:13px 17px;border-bottom:1px solid var(--rail);cursor:pointer;background:#12191f}
-  .mbhead:hover{background:#17212a}
-  .mbhead:focus-visible{outline:2px solid var(--mc);outline-offset:-2px}
-  .dot{width:12px;height:12px;border-radius:50%;background:var(--mc);box-shadow:0 0 12px 1px var(--mc);flex:none}
-  .mbhead .nm{font-size:16px;font-weight:700;letter-spacing:.3px}
-  .mbhead .hw{font-family:var(--mono);font-size:11px;color:var(--mut)}
-  .mbhead .mbstats{font-family:var(--mono);font-size:11px;color:var(--mut);margin-left:auto;text-align:right}
-  .mbhead .mbstats b{color:var(--ink);font-weight:600} .mbhead .mbstats .fr{color:var(--ok)}
-  .mbhead .zoom{font-family:var(--mono);font-size:11px;color:var(--mc);border:1px solid var(--mc);border-radius:6px;padding:3px 10px;flex:none;opacity:.85}
-  .mbhead:hover .zoom{opacity:1}
-  .mblock .units{padding:16px 17px}
+  /* ---------- status swatches ---------- */
+  .sq{display:inline-block;width:13px;height:13px;flex:none;vertical-align:-1px}
+  .s-hot{background:var(--hot)} .s-warn{background:var(--warn)} .s-ok{background:var(--ok)} .s-svc{background:var(--svc)}
+  .s-held{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--warn) 3px 5px);outline:1px solid var(--warn);outline-offset:-1px}
+  .s-idle{outline:1px dashed var(--faint);outline-offset:-1px}
+  .legend{display:flex;flex-wrap:wrap;gap:10px 22px;font:11.5px var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--dim);margin:6px 0 28px}
+  .legend span{display:flex;align-items:center;gap:7px}
 
-  /* machine detail */
-  .chassis{border:1px solid var(--rail);border-radius:14px;background:linear-gradient(180deg,var(--bg2),var(--bg));box-shadow:0 30px 80px -46px #000;overflow:hidden}
-  .mhead{display:flex;flex-wrap:wrap;align-items:center;gap:18px;padding:20px 24px;border-bottom:1px solid var(--rail);background:linear-gradient(180deg,#12191f,#0f151a)}
-  .eye{width:24px;height:24px;border-radius:50%;flex:none;background:radial-gradient(circle at 50% 45%,#fff6 0 10%,var(--accent) 32%,#0006 90%);box-shadow:0 0 0 1px #000,0 0 16px 2px var(--accent);animation:pulse 3.2s ease-in-out infinite}
-  @keyframes pulse{0%,100%{filter:brightness(.9)}50%{filter:brightness(1.15)}}
-  @media(prefers-reduced-motion:reduce){.eye{animation:none}}
-  .mname{font-size:25px;font-weight:700;letter-spacing:.5px;margin:0;line-height:1}
-  .msub{font-family:var(--mono);font-size:12.5px;color:var(--mut);margin-top:5px}
-  .mrole{margin-left:auto;text-align:right}
-  .mrole .tag{display:inline-block;font-size:11px;text-transform:uppercase;letter-spacing:1.3px;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:4px 11px;opacity:.9}
-  .mrole .totals{font-family:var(--mono);font-size:12.5px;color:var(--mut);margin-top:8px}
-  .mrole b{color:var(--ink);font-weight:600}
+  /* ========== RACK look: each machine drawn as a chassis with its GPU bays ========== */
+  .rk{display:grid;grid-template-columns:190px 1fr;margin-bottom:10px}
+  .rk-tag{border:1.5px solid var(--line2);border-right:0;padding:14px 14px 12px;display:flex;flex-direction:column;justify-content:space-between;gap:14px;background:#17140fe6;cursor:pointer;text-align:left}
+  .rk-tag:hover{background:#221d16}
+  .rk-tag h2{margin:0;font:700 25px/1 var(--cond);display:flex;align-items:center;gap:9px}
+  .lamp{width:10px;height:10px;border-radius:50%;background:var(--mc);flex:none}
+  .rk-tag .hw{font:11px/1.6 var(--mono);text-transform:uppercase;color:var(--dim);margin-top:8px}
+  .rk-tag .use{font:12px var(--mono);color:var(--dim)} .rk-tag .use b{color:var(--paper);font-weight:600}
+  .rk-tag .open{font:11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--mc)}
+  .rk-chassis{border:1.5px solid var(--line2);position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));background:#17140fe6}
+  .rk-chassis::after{content:"";position:absolute;top:10px;bottom:10px;right:-12px;width:7px;border:1px solid var(--line2);background:repeating-linear-gradient(0deg,transparent 0 6px,var(--line2) 6px 7px)}
+  .bay{border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);margin:0 -1px -1px 0;padding:10px 11px 12px;display:grid;grid-template-rows:auto 90px auto;align-content:start;gap:8px;min-width:0}
+  .bay .id{display:flex;justify-content:space-between;gap:6px;font:11px var(--mono);text-transform:uppercase;color:var(--dim)}
+  .bay .id b{color:var(--paper);font-weight:500}
+  .gauge{border:1.5px solid var(--line2);position:relative;background:repeating-linear-gradient(90deg,transparent 0 9px,#ece4d50d 9px 10px)}
+  .gauge .fill{position:absolute;left:0;right:0;bottom:0}
+  .gauge .pct{position:absolute;right:5px;top:4px;font:500 11.5px var(--mono);background:var(--ink);padding:0 4px}
+  .bay.held .gauge{border-style:dashed;border-color:var(--warn);background:repeating-linear-gradient(135deg,transparent 0 6px,#d9a23a40 6px 8px)}
+  .bay.idle .gauge{border-style:dashed}
+  .bay .models{display:flex;flex-direction:column;gap:6px;min-width:0}
+  .bay .mdl{font-weight:600;font-size:14.5px;line-height:1.15;overflow-wrap:anywhere}
+  .bay .mdl small{display:block;font:10.5px/1.4 var(--mono);font-weight:400;color:var(--dim);margin-top:2px;text-transform:uppercase;letter-spacing:.03em}
+  .bay .mdl .ab{color:var(--svc)}
+  .bay .data{font:11px/1.5 var(--mono);color:var(--dim);margin-top:3px}
+  .bay .data b{color:var(--paper);font-weight:500}
+  .bay .note{font:10.5px/1.4 var(--mono);color:var(--faint)}
+  .dim{display:flex;align-items:center;gap:8px;font:11px var(--mono);color:var(--faint);margin:6px 0 26px 190px}
+  .dim::before,.dim::after{content:"";flex:1;border-top:1px solid var(--line2)}
 
-  .specbar{padding:16px 24px;border-bottom:1px solid var(--rail)}
-  .specs{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 22px}
-  .sp{display:flex;flex-direction:column;gap:3px;border-left:2px solid var(--rail2);padding-left:11px}
-  .sk{font-family:var(--mono);font-size:9.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--dim)}
-  .sv{font-size:13.5px;color:var(--ink);font-variant-numeric:tabular-nums}
-  .mdesc{margin:14px 0 0;font-size:13.5px;line-height:1.55;color:var(--mut);max-width:70ch}
-  .mdocs{margin:10px 0 0;font-size:12.5px;line-height:1.5}
-  .mdocs a{color:var(--llama);text-decoration:none;border-bottom:1px dotted var(--rail2)}
-  .mdocs a:hover{border-bottom-style:solid}
-  .proxbar{padding:16px 24px;border-bottom:1px solid var(--rail);background:#0e141980}
-  .proxies{display:flex;flex-wrap:wrap;gap:10px}
-  .prox{flex:1 1 190px;min-width:180px;border:1px solid var(--rail2);border-radius:9px;background:linear-gradient(180deg,#171f26,#131a20);padding:11px 13px}
-  .prox .top{display:flex;align-items:baseline;gap:8px}
-  .prox .pname{font-weight:600;font-size:13.5px}
-  .prox .port{font-family:var(--mono);font-size:12px;color:var(--accent);margin-left:auto}
-  .prox .route{font-family:var(--mono);font-size:11.5px;color:var(--mut);margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-  .arrow{color:var(--dim)}
-  .be{font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:1.5px 6px;border-radius:5px;font-weight:600}
-  .be.vllm{color:var(--vllm);background:#7b8cff18;border:1px solid #7b8cff40}
-  .be.ollama{color:var(--ollama);background:#4fd0c818;border:1px solid #4fd0c840}
-  .be.cloud{color:var(--cloud);background:#f0a86818;border:1px solid #f0a86840}
-  .be.chain{color:var(--svc);background:#c98bdb18;border:1px solid #c98bdb40}
-  .be.llama{color:var(--llama);background:#f0a86818;border:1px solid #f0a86840}
-  .prox .flags{margin-top:8px;display:flex;gap:5px;flex-wrap:wrap;min-height:6px}
-  .pill{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:4px;border:1px solid var(--rail2);color:var(--mut)}
+  /* ========== LEDGER look: big numerals + hard-ruled tables ========== */
+  .lg{display:grid;grid-template-columns:270px 1fr;gap:0 24px;border-bottom:2px solid var(--paper);padding:26px 0 24px}
+  .lg-head{text-align:left;background:none;border:0;padding:0;cursor:pointer;align-self:start}
+  .lg-head h2{margin:0;font-family:var(--grot);font-stretch:68%;font-weight:900;font-size:46px;line-height:.9;text-transform:uppercase;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+  .lg-head h2 .lamp{width:12px;height:12px}
+  .lg-head .hw{font:11.5px/1.7 var(--mono);text-transform:uppercase;color:var(--dim);margin-top:10px}
+  .lg-head .use{margin-top:14px;font-family:var(--grot);font-stretch:68%;font-weight:700;font-size:32px}
+  .lg-head .use small{font-size:14px;font-weight:500;color:var(--dim)}
+  .lg-head .open{display:inline-block;margin-top:12px;font:11px var(--mono);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--mc);color:var(--paper)}
+  .lg-head:hover .open{color:var(--mc)}
+  table.rows{width:100%;border-collapse:collapse;font-size:15px}
+  table.rows th{font:500 10.5px var(--mono);text-transform:uppercase;letter-spacing:.09em;text-align:left;color:var(--faint);border-bottom:2px solid var(--paper);padding:0 10px 6px 0}
+  table.rows td{border-bottom:1px solid var(--line);padding:9px 10px 9px 0;vertical-align:top}
+  table.rows td.n{font:500 13px var(--mono);width:36px;padding-top:11px}
+  table.rows td.st{width:26px;padding-top:12px}
+  table.rows td.m b{font-weight:700}
+  table.rows td.m small{font:11.5px var(--mono);color:var(--dim);margin-left:8px}
+  table.rows td.m .ab{color:var(--svc)}
+  table.rows td.m .data{font:11px/1.5 var(--mono);color:var(--dim);margin-top:4px}
+  table.rows td.m .data b{color:var(--paper);font-weight:500}
+  table.rows td.m .note{font:11px var(--mono);color:var(--faint);margin-top:3px}
+  table.rows td.bar{width:min(240px,26%);padding-top:14px}
+  .track{height:10px;border:1.5px solid var(--paper);position:relative}
+  .track i{position:absolute;inset:0 auto 0 0;background:var(--paper)}
+  tr.held .track{border-style:dashed;border-color:var(--warn)}
+  tr.held td.m b{font-weight:500;font-style:italic}
+  table.rows td.v{font:500 13px var(--mono);width:110px;text-align:right;padding-top:11px;white-space:nowrap}
 
-  .gpubar{padding:20px 24px 24px}
-  .units{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-  @media(max-width:860px){.units{grid-template-columns:repeat(2,1fr)}}
-  @media(max-width:540px){.units{grid-template-columns:1fr}}
-  .unit.span{grid-column:span 2}
-  @media(max-width:540px){.unit.span{grid-column:span 1}}
-  .gpu{border:1px solid var(--rail);border-radius:11px;background:var(--card);padding:13px;display:flex;flex-direction:column;gap:11px;min-height:148px;height:100%}
-  .gpu.idle{opacity:.66;background:#11171c;border-style:dashed}
-  .gpu.burst{background:#141017;border:1px dashed var(--warn)}
-  .gpu.warncard{border:1px solid var(--hot)}
-  .ghead{display:flex;align-items:center;gap:9px}
-  .gidx{font-family:var(--mono);font-weight:600;font-size:12px;color:var(--ink);background:#0c1013;border:1px solid var(--rail2);border-radius:6px;padding:2px 8px}
-  .gname{font-size:12.5px;font-weight:600}
-  .gvram{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums}
-  .bar{height:6px;border-radius:99px;background:#0b0f12;border:1px solid #000;overflow:hidden}
-  .bar>span{display:block;height:100%;border-radius:99px}
-  .fill-ok{background:linear-gradient(90deg,#2f8f3e,var(--ok))}
-  .fill-warn{background:linear-gradient(90deg,#a97913,var(--warn))}
-  .fill-hot{background:linear-gradient(90deg,#a5322d,var(--hot))}
-  .chips{display:flex;flex-direction:column;gap:8px}
-  .chip{border:1px solid var(--rail2);border-left:3px solid var(--vllm);border-radius:8px;background:linear-gradient(180deg,#1b232b,#161d24);padding:9px 11px}
-  .chip.ollama{border-left-color:var(--ollama)} .chip.svc{border-left-color:var(--svc)} .chip.llama{border-left-color:var(--llama)}
-  .chip .cname{font-weight:600;font-size:13px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-  .chip .cname .b{font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);border:1px solid var(--rail2);border-radius:4px;padding:0 5px;font-weight:600}
-  .chip .cname .ab{color:var(--svc);border-color:#c98bdb55}
-  .chip .data{font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:6px;display:flex;flex-wrap:wrap;gap:4px 12px}
-  .chip .data b{color:var(--ink);font-weight:500} .chip .data .k{color:var(--dim)}
-  .free{margin:auto;color:var(--dim);font-family:var(--mono);font-size:12px;letter-spacing:1px}
-  .burstlabel{margin:auto;text-align:center;color:var(--warn);font-family:var(--mono);font-size:11px}
-  .burstlabel small{display:block;color:var(--mut);letter-spacing:0;margin-top:3px;font-size:10px}
-  .spanhead{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;border:1px solid var(--rail2);border-left:3px solid var(--llama);border-radius:8px;background:linear-gradient(180deg,#211d17,#181510);padding:9px 11px;margin-bottom:-4px;flex-wrap:wrap}
-  .spanhead .b{font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);border:1px solid var(--rail2);border-radius:4px;padding:0 5px}
-  .spanhead .data{font-family:var(--mono);font-size:10.5px;color:var(--mut);margin-left:auto;font-weight:400}
-  .bridge{text-align:center;color:var(--llama);font-family:var(--mono);font-size:14px;line-height:.6;margin:2px 0 -2px}
-  .spanmembers{display:flex;gap:10px}
-  .spanmembers .gpu{flex:1;min-height:auto;background:#12181e}
-  .spanmembers .gpu .chips,.spanmembers .gpu .free{display:none}
+  /* ---------- machine sheet (detail) ---------- */
+  .sheet-head{display:grid;grid-template-columns:1fr auto;gap:10px 30px;align-items:end;padding-bottom:16px}
+  .sheet-head h2{margin:0;display:flex;align-items:center;gap:12px}
+  .sheet-head .hw{font:12.5px var(--mono);color:var(--dim);margin-top:8px}
+  .sheet-head .role{font:500 11.5px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--mc);text-align:right}
+  .sheet-head .tl{font:12.5px var(--mono);color:var(--dim);margin-top:6px;text-align:right}
+  .sheet-head .tl b{color:var(--paper);font-weight:600}
+  dl.specs{display:grid;grid-template-columns:repeat(4,1fr);margin:0}
+  dl.specs div{padding:10px 14px 10px 0}
+  dl.specs dt{font:500 10px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--faint)}
+  dl.specs dd{margin:4px 0 0;font-size:14.5px}
+  .desc{max-width:78ch;color:var(--dim);font-size:15px;line-height:1.6;margin:16px 0 6px}
+  .docs{font:12.5px var(--mono);margin:8px 0 0}
+  .docs a{color:var(--paper);border-bottom:1px solid var(--mc);text-decoration:none}
+  .docs a:hover{color:var(--mc)}
+  .block{margin-top:30px}
+  table.plain{width:100%;border-collapse:collapse}
+  table.plain th{font:500 10.5px var(--mono);text-transform:uppercase;letter-spacing:.09em;text-align:left;color:var(--faint);padding:0 12px 7px 0;border-bottom:1.5px solid var(--line2)}
+  table.plain td{padding:9px 12px 9px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  table.plain td.mono{font-size:12.5px;color:var(--dim)}
+  table.plain b{font-weight:600}
+  .be{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.06em}
+  .be-vllm{color:var(--cyan)} .be-ollama{color:var(--ok)} .be-cloud,.be-llama,.be-llama\.cpp{color:var(--warn)} .be-chain{color:var(--svc)}
+  .flag{display:inline-block;font:10.5px var(--mono);color:var(--dim);border:1px solid var(--line2);padding:0 6px;margin:4px 4px 0 0}
+  [data-look="rack"] .sheet{border:1.5px solid var(--line2);background:#17140fe6;padding:22px 24px 26px}
+  [data-look="rack"] .sheet-head{border-bottom:1.5px solid var(--line2)}
+  [data-look="rack"] .sheet-head h2{font:700 38px/1 var(--cond)}
+  [data-look="rack"] dl.specs{border-bottom:1px solid var(--line2)}
+  [data-look="rack"] dl.specs div+div{border-left:1px solid var(--line2);padding-left:14px}
+  [data-look="ledger"] .sheet-head{border-bottom:2px solid var(--paper)}
+  [data-look="ledger"] .sheet-head h2{font-family:var(--grot);font-stretch:68%;font-weight:900;font-size:64px;line-height:.9;text-transform:uppercase;letter-spacing:-.02em}
+  [data-look="ledger"] dl.specs{border-bottom:1px solid var(--line2)}
+  .sheet .rk{grid-template-columns:1fr}
+  .sheet .rk-chassis::after{display:none}
+  .sheet .bay{grid-template-rows:auto 70px auto}
 
-  /* cloud + agents */
-  .grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
-  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
-  .ccard{border:1px solid var(--rail);border-left:3px solid var(--cloud);border-radius:11px;background:var(--card);padding:15px 17px}
-  .ccard.off{opacity:.55;border-left-color:var(--dim)}
-  .ccard .ct{display:flex;align-items:center;gap:9px;margin-bottom:4px}
-  .ccard .cn{font-size:15px;font-weight:700}
-  .status{margin-left:auto;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:2px 8px;border-radius:99px}
-  .status.on{color:var(--ok);border:1px solid #3fb95055;background:#3fb9500f}
-  .status.no{color:var(--dim);border:1px solid var(--rail2)}
-  .ccard .use{font-size:12px;color:var(--mut);margin:2px 0 10px}
-  .ccard .ml{font-family:var(--mono);font-size:11px;color:var(--ink);display:flex;flex-wrap:wrap;gap:5px}
-  .ccard .ml span{background:#0c1013;border:1px solid var(--rail2);border-radius:5px;padding:1.5px 7px;color:var(--mut)}
-  .acard{border:1px solid var(--rail);border-left:3px solid var(--vllm);border-radius:11px;background:var(--card);padding:15px 17px}
-  .acard .an{font-size:15px;font-weight:700;display:flex;align-items:center;gap:9px}
-  .acard .ah{font-family:var(--mono);font-size:10.5px;color:var(--dim);margin-left:auto}
-  .acard .ar{font-size:12px;color:var(--mut);margin:3px 0 9px}
-  .acard .pts{font-family:var(--mono);font-size:11.5px;color:var(--ink);display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
-  .acard .pts .k{color:var(--dim);flex:none}
-  .acard .pts b{color:var(--llama);font-weight:600}
+  /* ---------- cloud + agents ---------- */
+  .on{color:var(--ok);font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.08em}
+  .off{color:var(--faint);font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.08em}
+  tr.inactive td{opacity:.55}
+  .mlist{font:12px var(--mono);color:var(--dim)}
+  [data-look="rack"] .panel{border:1.5px solid var(--line2);background:#17140fe6;padding:18px 20px}
+  .kara{margin-top:30px}
+  .kara h3{margin:0;font-size:22px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .kara h3 small{font:12px var(--mono);font-weight:400;color:var(--dim)}
+  .kara p{color:var(--dim);margin:6px 0 4px}
+  [data-look="ledger"] .kara h3{font-family:var(--grot);font-stretch:68%;font-weight:900;font-size:34px;text-transform:uppercase}
+  .foot{color:var(--faint);font:11.5px var(--mono);margin-top:32px;text-align:center}
 
-  .legend{margin-top:16px;border:1px solid var(--rail);border-radius:11px;background:#0f151a;padding:14px 18px}
-  .legend .row{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;font-size:11.5px;color:var(--mut)}
-  .legend .item{display:flex;align-items:center;gap:7px} .sw{width:20px;height:8px;border-radius:99px}
-  .swbox{width:16px;height:12px;border-radius:3px;border:1px dashed var(--warn)}
-  .foot{color:var(--dim);font-size:11px;font-family:var(--mono);margin-top:18px;text-align:center}
-  .hide{display:none}
-</style>
-
+  @media(max-width:860px){
+    .mast{grid-template-columns:1fr}.lookctl{align-items:flex-start}
+    .totals{grid-template-columns:repeat(2,1fr)}
+    [data-look="ledger"] .tot:nth-child(2){border-right:0}
+    [data-look="ledger"] .tot:nth-child(3){padding-left:0}
+    [data-look="rack"] .tot:nth-child(2){border-right:0}
+    [data-look="rack"] .tot:nth-child(-n+2){border-bottom:1px solid var(--line2)}
+    .rk{grid-template-columns:1fr}.rk-tag{border-right:1.5px solid var(--line2);border-bottom:0}
+    .rk-chassis::after{display:none}.dim{margin-left:0}
+    .lg{grid-template-columns:1fr;gap:16px}
+    dl.specs{grid-template-columns:repeat(2,1fr)}
+    .sheet-head{grid-template-columns:1fr}.sheet-head .role,.sheet-head .tl{text-align:left}
+    table.rows td.bar{display:none} table.rows th.bar{display:none}
+    .hide-sm{display:none}
+    .tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+    .tab,.backbtn{flex:none}
+  }
+</style></head><body>
 <div class="wrap">
-  <div class="topbar">
-    <h1 id="crumbTitle">Fleet LLM Map</h1>
-    <span class="sub" id="crumbSub">compute · cloud · agents</span>
-    <div class="crumb back hide" id="backwrap"><button id="backbtn">← all machines</button></div>
-  </div>
-  <nav class="tabs">
-    <button class="tab on" data-view="compute">▚ Compute</button>
-    <button class="tab" data-view="cloud">☁ Cloud subscriptions</button>
-    <button class="tab" data-view="agents">◇ Agents</button>
+  <header class="mast">
+    <div>
+      <div class="kick">Draconis homelab · LLM fleet</div>
+      <h1 id="crumbTitle">Fleet LLM Map</h1>
+      <div class="sub" id="crumbSub">compute · cloud · agents</div>
+    </div>
+    <div class="lookctl">
+      <span class="k" id="lookLabel">Page style</span>
+      <div class="look" role="radiogroup" aria-labelledby="lookLabel">
+        <button type="button" role="radio" data-look="rack" aria-checked="true">Rack</button>
+        <button type="button" role="radio" data-look="ledger" aria-checked="false">Ledger</button>
+      </div>
+    </div>
+  </header>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" data-view="compute" aria-selected="true">Compute</button>
+    <button class="tab" role="tab" data-view="cloud" aria-selected="false">Cloud subscriptions</button>
+    <button class="tab" role="tab" data-view="agents" aria-selected="false">Agents</button>
+    <button class="backbtn hide" id="backbtn" type="button">← all machines</button>
   </nav>
 
-  <div id="view-compute"><div id="overview"></div><div id="detail" class="hide"></div></div>
-  <div id="view-cloud" class="hide"></div>
-  <div id="view-agents" class="hide"></div>
+  <main>
+    <div id="view-compute"><div id="overview"></div><div id="detail" class="hide"></div></div>
+    <div id="view-cloud" class="hide"></div>
+    <div id="view-agents" class="hide"></div>
+  </main>
 
-  <p class="foot">local snapshot 2026-08-28 · self-hosted models on our own hardware + metered cloud fallbacks · hover a machine for its models, click to drill in</p>
+  <p class="foot">local snapshot 2026-08-28 · self-hosted models on our own hardware + metered cloud fallbacks · click a machine for its full sheet</p>
 </div>
-
 <script>
 const esc = s => String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 
@@ -340,9 +399,11 @@ const KARAKURI = {
   ]
 };
 
-const fillClass = p => p>85?'fill-hot':p>40?'fill-warn':'fill-ok';
-const fillColor = p => p>85?'#e5484d':p>40?'#d29922':'#3fb950';
+const pctOf = g => Math.min(100,Math.round(100*(g.used||0)/g.total));
+const level = p => p>85?'hot':p>40?'warn':'ok';
+const levelColor = {hot:'var(--hot)',warn:'var(--warn)',ok:'var(--ok)'};
 const gpuUsedTotal = m => m.gpus.reduce((a,g)=>a+(g.used||0),0);
+const fmtGB = n => String(Math.round(n*10)/10);
 function machineFree(m){
   let freeCards=0, freeVram=0;
   m.gpus.forEach(g=>{
@@ -352,151 +413,171 @@ function machineFree(m){
   });
   return {freeCards, freeVram};
 }
-function unitsHTML(m){
-  const claimed=new Set(),units=[];
-  (m.spans||[]).forEach(s=>{ s.members.forEach(i=>claimed.add(i)); const mem=s.members.map(i=>m.gpus[i]);
-    const data=Object.entries(s.data||{}).map(([k,v])=>`${k} ${v}`).join(' · ');
-    units.push(`<div class="unit span"><div class="spanhead"><span>${esc(s.name)}</span><span class="b">${esc(s.type)} · spans ${s.members.length} GPUs</span><span class="data">${esc(data)}</span></div>
-      <div class="bridge">╱╲</div><div class="spanmembers">${mem.map(g=>gpuCardHTML(g,m)).join('')}</div></div>`); });
-  m.gpus.forEach(g=>{ if(!claimed.has(g.idx)) units.push(`<div class="unit">${gpuCardHTML(g,m)}</div>`); });
-  return units.join('');
+/* one status per card: held (burst pool), idle (no model), service (only services), else by fill */
+function gpuState(g){
+  const hasModel=g.chips&&g.chips.length;
+  if(g.burst) return 'held';
+  if(!hasModel) return 'idle';
+  if(g.chips.every(c=>c.type==='svc')) return 'svc';
+  return level(pctOf(g));
+}
+const dataLine = c => Object.entries(c.data||{}).map(([k,v])=>`${esc(k)} <b>${esc(v)}</b>`).join(' · ');
+function modelName(c){ return `${esc(c.name)}${c.ab?' <span class="ab">abliterated</span>':''}`; }
+
+/* ---------- rack look ---------- */
+function bayHTML(g,full){
+  const p=pctOf(g), st=gpuState(g);
+  const fill = st==='held'||st==='idle' ? '' :
+    `<div class="fill" style="height:${Math.max(2,p)}%;background:${st==='svc'?'var(--svc)':levelColor[level(p)]}"></div>`;
+  const pct = st==='held' ? 'held' : st==='idle' ? 'free' : p+'%';
+  let models;
+  if(st==='held') models=`<div class="mdl">${esc(g.burst)} burst pool<small>pinned · loads on demand · not free</small></div>`;
+  else if(st==='idle') models=`<div class="mdl" style="color:var(--dim)">— free —</div>`;
+  else models=g.chips.map(c=>`<div class="mdl">${modelName(c)}${c.b?`<small>${esc(c.b)}</small>`:''}${full&&c.data&&Object.keys(c.data).length?`<div class="data">${dataLine(c)}</div>`:''}</div>`).join('');
+  return `<div class="bay ${st}">
+    <div class="id"><span>GPU ${g.idx}</span><b>${fmtGB(g.used||0)} / ${g.total} GB</b></div>
+    <div class="gauge" role="img" aria-label="GPU ${g.idx}: ${fmtGB(g.used||0)} of ${g.total} GB in use">${fill}<span class="pct">${pct}</span></div>
+    <div class="models">${models}${full&&g.note?`<div class="note">${esc(g.note)}</div>`:''}</div></div>`;
+}
+function rackHTML(m,full){
+  const used=gpuUsedTotal(m);
+  const tag = full ? '' : `<button class="rk-tag" type="button" data-id="${m.id}" aria-label="Open ${esc(m.name)} machine sheet">
+      <div><h2><span class="lamp"></span>${esc(m.name)}</h2><div class="hw">${esc(m.hw)}</div></div>
+      <div><div class="use"><b>${Math.round(used)}</b> / ${m.total} GB</div><div class="open">sheet ↗</div></div></button>`;
+  return `<article class="rk" style="--mc:${m.mc}">${tag}<div class="rk-chassis">${m.gpus.map(g=>bayHTML(g,full)).join('')}</div></article>
+    ${full?'':`<div class="dim">${m.total} GB across ${m.gpus.length} card${m.gpus.length===1?'':'s'}</div>`}`;
 }
 
-/* ---- overview: every machine drawn as its real GPU grid ---- */
+/* ---------- ledger look ---------- */
+function rowHTML(g,full){
+  const p=pctOf(g), st=gpuState(g);
+  const sq={held:'s-held',idle:'s-idle',svc:'s-svc',hot:'s-hot',warn:'s-warn',ok:'s-ok'}[st];
+  let m;
+  if(st==='held') m=`<b>${esc(g.burst)} burst pool</b><small>pinned · loads on demand</small>`;
+  else if(st==='idle') m=`<b>— free —</b>`;
+  else m=g.chips.map(c=>`<div><b>${modelName(c)}</b>${c.b?`<small>${esc(c.b)}</small>`:''}${full&&c.data&&Object.keys(c.data).length?`<div class="data">${dataLine(c)}</div>`:''}</div>`).join('');
+  return `<tr class="${st}"><td class="n">${g.idx}</td><td class="st"><i class="sq ${sq}"></i></td>
+    <td class="m">${m}${full&&g.note?`<div class="note">${esc(g.note)}</div>`:''}</td>
+    <td class="bar"><div class="track">${st==='held'||st==='idle'?'':`<i style="width:${Math.max(1,p)}%"></i>`}</div></td>
+    <td class="v">${fmtGB(g.used||0)} / ${g.total}</td></tr>`;
+}
+function ledgerTable(m,full){
+  return `<table class="rows"><thead><tr><th>GPU</th><th></th><th>Model / service</th><th class="bar">VRAM</th><th style="text-align:right">GB</th></tr></thead>
+    <tbody>${m.gpus.map(g=>rowHTML(g,full)).join('')}</tbody></table>`;
+}
+function ledgerHTML(m){
+  const used=gpuUsedTotal(m);
+  return `<section class="lg" style="--mc:${m.mc}">
+    <button class="lg-head" type="button" data-id="${m.id}" aria-label="Open ${esc(m.name)} machine sheet">
+      <h2><span class="lamp"></span>${esc(m.name)}</h2>
+      <div class="hw">${esc(m.hw)}<br>${esc(m.role)}</div>
+      <div class="use">${Math.round(used)}<small> / ${m.total} GB in use</small></div>
+      <span class="open">machine sheet →</span></button>
+    ${ledgerTable(m,false)}</section>`;
+}
+
+const LEGEND = `<div class="legend" aria-label="Legend">
+  <span><i class="sq s-hot"></i>over 85%</span><span><i class="sq s-warn"></i>40–85%</span><span><i class="sq s-ok"></i>under 40%</span>
+  <span><i class="sq s-svc"></i>service</span><span><i class="sq s-held"></i>load-on-demand (not free)</span><span><i class="sq s-idle"></i>free</span></div>`;
+
+/* ---- overview ---- */
 function renderOverview(){
+  const look=document.documentElement.dataset.look;
   let totVram=0,totUsed=0,totFree=0,totFreeCards=0,totModels=0;
   FLEET.forEach(m=>{ totVram+=m.total; totUsed+=gpuUsedTotal(m); const f=machineFree(m); totFree+=f.freeVram; totFreeCards+=f.freeCards;
     (m.spans||[]).forEach(()=>totModels++); m.gpus.forEach(g=>totModels+=(g.chips?g.chips.length:0)); });
   const cardCount=FLEET.reduce((a,m)=>a+m.gpus.length,0);
-  const agg=`<div class="agg">
-    <div class="stat"><div class="k">Fleet VRAM</div><div class="v">${totVram}<small> GB</small></div><div class="note">${FLEET.length} GPU boxes · ${cardCount} cards</div></div>
-    <div class="stat"><div class="k">Committed</div><div class="v">${Math.round(totUsed)}<small> GB</small></div><div class="note">${totModels} models · weights + context</div></div>
-    <div class="stat free"><div class="k">Deployable free</div><div class="v">${totFreeCards}<small> cards</small></div><div class="note">${totFreeCards===0?'fully committed right now':Math.round(totFree)+' GB on empty cards'}</div></div>
-    <div class="stat"><div class="k">Reserved on-demand</div><div class="v">3<small> +1</small></div><div class="note">VibeVoice burst ×3 · 1 card recovering</div></div>
+  const totals=`<div class="totals">
+    <div class="tot"><span class="k">Fleet VRAM</span><b>${totVram}<small> GB</small></b><div class="note">${FLEET.length} GPU boxes · ${cardCount} cards</div></div>
+    <div class="tot"><span class="k">Committed</span><b>${Math.round(totUsed)}<small> GB</small></b><div class="note">${totModels} models · weights + context</div></div>
+    <div class="tot ${totFreeCards===0?'zero':''}"><span class="k">Deployable free</span><b>${totFreeCards}<small> cards</small></b><div class="note">${totFreeCards===0?'fully committed right now':Math.round(totFree)+' GB on empty cards'}</div></div>
+    <div class="tot"><span class="k">Reserved on-demand</span><b>3<small> +1</small></b><div class="note">VibeVoice burst ×3 · 1 card recovering</div></div>
   </div>`;
-  const blocks=FLEET.map(m=>{
-    const used=gpuUsedTotal(m),f=machineFree(m);
-    return `<div class="mblock" style="--mc:${m.mc}">
-      <div class="mbhead" data-id="${m.id}" role="button" tabindex="0">
-        <span class="dot"></span><span class="nm">${m.name}</span><span class="hw">${esc(m.hw)}</span>
-        <span class="mbstats">vram <b>${Math.round(used)}</b>/${m.total} GB · <span class="fr">${f.freeCards} free card${f.freeCards===1?'':'s'}</span></span>
-        <span class="zoom">details ↗</span>
-      </div>
-      <div class="units">${unitsHTML(m)}</div>
-    </div>`;
-  }).join('');
-  document.getElementById('overview').innerHTML=agg+`<p class="section-label">Machines · click a machine header to zoom into its full page</p>${blocks}`;
+  const body = look==='ledger' ? FLEET.map(ledgerHTML).join('') : FLEET.map(m=>rackHTML(m,false)).join('');
+  document.getElementById('overview').innerHTML = totals + LEGEND + body;
 }
 
-/* ---- machine detail ---- */
-function chipHTML(c){
-  const data=Object.entries(c.data||{}).map(([k,v])=>`<span><span class="k">${esc(k)}</span> <b>${esc(v)}</b></span>`).join('');
-  return `<div class="chip ${c.type||''}"><div class="cname">${esc(c.name)} ${c.b?`<span class="b">${esc(c.b)}</span>`:''}${c.ab?`<span class="b ab">abliterated</span>`:''}</div><div class="data">${data}</div></div>`;
-}
-function gpuCardHTML(g,m){
-  const p=Math.min(100,Math.round(100*(g.used||0)/g.total));
-  const hasModel=g.chips&&g.chips.length;
-  let cls='gpu';if(g.warncard)cls+=' warncard';else if(g.burst)cls+=' burst';else if(!hasModel)cls+=' idle';
-  let inner;
-  if(g.burst)inner=`<div class="burstlabel">◇ ${esc(g.burst)} burst pool<small>pinned · loads on demand · not free</small></div>`;
-  else if(hasModel)inner=`<div class="chips">${g.chips.map(chipHTML).join('')}</div>`;
-  else inner=`<div class="free">— free —</div>`;
-  return `<div class="${cls}">
-    <div class="ghead"><span class="gidx">GPU ${g.idx}</span><span class="gname">${esc(g.name)}</span><span class="gvram">${g.used||0}/${g.total} GB · ${p}%</span></div>
-    <div class="bar"><span class="${fillClass(p)}" style="width:${Math.max(2,p)}%"></span></div>
-    ${g.note?`<div style="font-family:var(--mono);font-size:10px;color:var(--mut)">${esc(g.note)}</div>`:''}${inner}</div>`;
-}
+/* ---- machine sheet ---- */
 function renderDetail(m){
-  document.documentElement.style.setProperty('--accent',m.mc);
+  const look=document.documentElement.dataset.look;
   const used=gpuUsedTotal(m),f=machineFree(m);
   const activeCards=m.gpus.filter(g=>(g.chips&&g.chips.length)||(m.spans||[]).some(s=>s.members.includes(g.idx))).length;
-  const proxies=m.proxies.map(p=>`<div class="prox"><div class="top"><span class="pname">${esc(p.name)}</span><span class="port">${esc(p.port)}</span></div>
-    <div class="route"><span class="be ${p.be}">${esc(p.be)}</span><span class="arrow">→</span> ${esc(p.route)}</div>
-    <div class="flags">${(p.flags||[]).map(fl=>`<span class="pill">${esc(fl)}</span>`).join('')}</div></div>`).join('');
-  document.getElementById('detail').innerHTML=`<div class="chassis">
-    <div class="mhead"><div class="eye"></div>
-      <div><h2 class="mname">${m.name}</h2><div class="msub">${esc(m.hw)} · ${m.vendor}</div></div>
-      <div class="mrole"><span class="tag">${esc(m.role)}</span>
-        <div class="totals">VRAM <b>${Math.round(used)} / ${m.total} GB</b> · deployable <b style="color:var(--ok)">${f.freeCards} card${f.freeCards===1?'':'s'}</b> · active <b>${activeCards}/${m.gpus.length}</b></div></div></div>
-    ${m.specs?`<div class="specbar"><p class="section-label">Machine</p>
-      <div class="specs">
-        <div class="sp"><span class="sk">Chassis</span><span class="sv">${esc(m.specs.chassis)}</span></div>
-        <div class="sp"><span class="sk">CPU</span><span class="sv">${esc(m.specs.cpu)}</span></div>
-        <div class="sp"><span class="sk">Memory</span><span class="sv">${esc(m.specs.mem)}</span></div>
-        <div class="sp"><span class="sk">OS</span><span class="sv">${esc(m.specs.os)}</span></div>
-      </div>
-      ${m.desc?`<p class="mdesc">${esc(m.desc)}</p>`:''}${m.docs&&m.docs.length?`<p class="mdocs">📄 ${m.docs.map(d=>`<a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.label)} ↗</a>`).join(' &nbsp;·&nbsp; ')}</p>`:''}</div>`:''}
-    <div class="proxbar"><p class="section-label">Fronting proxies</p><div class="proxies">${proxies}</div></div>
-    <div class="gpubar"><p class="section-label">GPUs · model residency</p><div class="units">${unitsHTML(m)}</div>
-      <div class="legend"><div class="row">
-        <span class="item"><span class="sw fill-ok"></span> &lt;40%</span>
-        <span class="item"><span class="sw fill-warn"></span> 40–85%</span>
-        <span class="item"><span class="sw fill-hot"></span> &gt;85%</span>
-        <span class="item"><span class="swbox"></span> load-on-demand (not free)</span>
-        <span class="item"><span class="sw" style="background:var(--llama)"></span> spanning model bridges its cards</span>
-      </div></div></div></div>`;
+  const specs=m.specs?`<dl class="specs">
+      <div><dt>Chassis</dt><dd>${esc(m.specs.chassis)}</dd></div><div><dt>CPU</dt><dd>${esc(m.specs.cpu)}</dd></div>
+      <div><dt>Memory</dt><dd>${esc(m.specs.mem)}</dd></div><div><dt>OS</dt><dd>${esc(m.specs.os)}</dd></div></dl>`:'';
+  const docs=m.docs&&m.docs.length?`<p class="docs">${m.docs.map(d=>`<a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.label)} ↗</a>`).join(' &nbsp;·&nbsp; ')}</p>`:'';
+  const proxies=`<table class="plain"><thead><tr><th>Proxy</th><th>Port</th><th>Backend</th><th>Route</th></tr></thead><tbody>
+    ${m.proxies.map(p=>`<tr><td><b>${esc(p.name)}</b></td><td class="mono">${esc(p.port||'—')}</td><td><span class="be be-${esc(p.be)}">${esc(p.be)}</span></td>
+      <td>${esc(p.route)}${(p.flags||[]).map(fl=>`<br><span class="flag">${esc(fl)}</span>`).join('')}</td></tr>`).join('')}</tbody></table>`;
+  const gpus = look==='ledger' ? ledgerTable(m,true) : rackHTML(m,true);
+  document.getElementById('detail').innerHTML=`<article class="sheet" style="--mc:${m.mc}">
+    <header class="sheet-head"><div><h2><span class="lamp"></span>${esc(m.name)}</h2><div class="hw">${esc(m.hw)} · ${esc(m.vendor)}</div></div>
+      <div><div class="role">${esc(m.role)}</div>
+      <div class="tl">VRAM <b>${Math.round(used)} / ${m.total} GB</b> · deployable <b>${f.freeCards} card${f.freeCards===1?'':'s'}</b> · active <b>${activeCards}/${m.gpus.length}</b></div></div></header>
+    ${specs}${m.desc?`<p class="desc">${esc(m.desc)}</p>`:''}${docs}
+    <section class="block"><p class="section-label">Fronting proxies</p>${proxies}</section>
+    <section class="block"><p class="section-label">GPUs · model residency</p>${LEGEND}${gpus}</section></article>`;
 }
 
 /* ---- cloud + agents ---- */
 function renderCloud(){
-  const cards=CLOUD.map(c=>`<div class="ccard ${c.on?'':'off'}">
-    <div class="ct"><span class="cn">${esc(c.name)}</span><span class="status ${c.on?'on':'no'}">${c.on?'active':'inactive'}</span></div>
-    <div class="use">${esc(c.use)}</div>
-    <div class="ml">${c.models.map(x=>`<span>${esc(x)}</span>`).join('')}</div></div>`).join('');
-  document.getElementById('view-cloud').innerHTML=`<p class="section-label">Cloud subscriptions — metered fallbacks & specialty models</p><div class="grid2">${cards}</div>
-    <p class="foot" style="margin-top:16px">local self-hosted models are the default; these are the paid/free cloud tiers the proxies fall back to</p>`;
+  const rows=CLOUD.map(c=>`<tr class="${c.on?'':'inactive'}"><td><b>${esc(c.name)}</b></td><td><span class="${c.on?'on':'off'}">${c.on?'active':'inactive'}</span></td>
+    <td>${esc(c.use)}</td><td class="mlist hide-sm">${c.models.map(esc).join(' · ')}</td></tr>`).join('');
+  document.getElementById('view-cloud').innerHTML=`<div class="panel"><p class="section-label">Cloud subscriptions — metered fallbacks & specialty models</p>
+    <table class="plain"><thead><tr><th>Service</th><th>Status</th><th>Used for</th><th class="hide-sm">Models</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="foot">local self-hosted models are the default; these are the paid/free cloud tiers the proxies fall back to</p>`;
 }
 function renderAgents(){
-  const cards=AGENTS.map(a=>`<div class="acard">
-    <div class="an">${esc(a.name)}<span class="ah">${esc(a.host)}</span></div>
-    <div class="ar">${esc(a.role)}</div>
-    <div class="pts"><span class="k">points at</span> <b>${esc(a.points)}</b></div></div>`).join('');
-  const subs=KARAKURI.subs.map(s=>`<div class="chip svc"><div class="cname">${esc(s.role)}</div><div class="data"><b>${esc(s.d)}</b></div></div>`).join('');
-  const kbox=`<div class="gpu" style="margin-top:20px;border-left:3px solid var(--svc)">
-    <div class="an" style="font-size:15px">${esc(KARAKURI.name)}<span class="ah">${esc(KARAKURI.host)} · factory, not a standing agent</span></div>
-    <div class="ar">${esc(KARAKURI.tag)}</div>
-    <div class="pts" style="margin:5px 0 11px"><span class="k">⚠ note</span> <b>${esc(KARAKURI.note)}</b></div>
-    <div class="k" style="margin-bottom:6px">subagents it spawns (per-role pipeline)</div>
-    <div class="chips">${subs}</div></div>`;
-  document.getElementById('view-agents').innerHTML=`<p class="section-label">Agents — the standing agents (each talks to its own model), plus the Karakuri factory (spawns subagents)</p><div class="grid2">${cards}</div>${kbox}`;
+  const rows=AGENTS.map(a=>`<tr><td><b>${esc(a.name)}</b></td><td class="mono">${esc(a.host)}</td><td>${esc(a.role)}</td><td class="mlist">${esc(a.points)}</td></tr>`).join('');
+  const subs=KARAKURI.subs.map(s=>`<tr><td><b>${esc(s.role)}</b></td><td>${esc(s.d)}</td></tr>`).join('');
+  document.getElementById('view-agents').innerHTML=`<div class="panel"><p class="section-label">Agents — the standing agents (each talks to its own model), plus the Karakuri factory (spawns subagents)</p>
+    <table class="plain"><thead><tr><th>Agent</th><th>Host</th><th>Role</th><th>Points at</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <section class="panel kara"><h3>${esc(KARAKURI.name)} <small>${esc(KARAKURI.host)} · factory, not a standing agent</small></h3>
+      <p>${esc(KARAKURI.tag)}</p><p class="mono" style="font-size:12.5px">note: ${esc(KARAKURI.note)}</p>
+      <p class="section-label" style="margin-top:16px">Subagents it spawns (per-role pipeline)</p>
+      <table class="plain"><tbody>${subs}</tbody></table></section>`;
 }
 
 /* ---- nav ---- */
-let curView='compute';
+let curView='compute', curMachine=null;
+const TITLES={compute:['Fleet LLM Map','compute · cloud · agents'],cloud:['Fleet LLM Map','cloud subscriptions · metered fallbacks & specialty models'],agents:['Fleet LLM Map','agents · who points at what']};
+function setCrumb(t,s){ document.getElementById('crumbTitle').textContent=t; document.getElementById('crumbSub').textContent=s; }
 function showMachine(id){
   const m=FLEET.find(x=>x.id===id); if(!m)return;
-  renderDetail(m);
+  curMachine=id; renderDetail(m);
   document.getElementById('overview').classList.add('hide');
   document.getElementById('detail').classList.remove('hide');
-  document.getElementById('backwrap').classList.remove('hide');
-  document.getElementById('crumbTitle').textContent=m.name;
-  document.getElementById('crumbSub').textContent=esc(m.hw);
+  document.getElementById('backbtn').classList.remove('hide');
+  setCrumb(TITLES.compute[0],'compute › '+m.name);
   window.scrollTo({top:0});
 }
 function backToOverview(){
+  curMachine=null;
   document.getElementById('overview').classList.remove('hide');
   document.getElementById('detail').classList.add('hide');
-  document.getElementById('backwrap').classList.add('hide');
-  document.documentElement.style.setProperty('--accent','#e5484d');
-  document.getElementById('crumbTitle').textContent='Fleet LLM Map';
-  document.getElementById('crumbSub').textContent='compute · cloud · agents';
+  document.getElementById('backbtn').classList.add('hide');
+  setCrumb(...TITLES.compute);
 }
 function switchView(v){
   curView=v;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.view===v));
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.view===v)));
   ['compute','cloud','agents'].forEach(x=>document.getElementById('view-'+x).classList.toggle('hide',x!==v));
-  document.getElementById('backwrap').classList.add('hide');
-  if(v==='compute'){ backToOverview(); }
-  else { document.documentElement.style.setProperty('--accent','#e5484d');
-    document.getElementById('crumbTitle').textContent = v==='cloud'?'Cloud subscriptions':'Agents';
-    document.getElementById('crumbSub').textContent = v==='cloud'?'metered fallbacks & specialty models':'who points at what';
-  }
+  document.getElementById('backbtn').classList.add('hide');
+  if(v==='compute') backToOverview(); else setCrumb(...TITLES[v]);
   window.scrollTo({top:0});
 }
-renderOverview(); renderCloud(); renderAgents();
-document.getElementById('overview').addEventListener('click',e=>{const c=e.target.closest('.mbhead');if(c)showMachine(c.dataset.id);});
-document.getElementById('overview').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList.contains('mbhead')){e.preventDefault();showMachine(e.target.dataset.id);}});
+function setLook(l){
+  document.documentElement.dataset.look=l;
+  document.querySelectorAll('.look button').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.look===l)));
+  try{localStorage.setItem('fleetmap-look',l)}catch(e){}
+  renderOverview();
+  if(curMachine){ const m=FLEET.find(x=>x.id===curMachine); if(m) renderDetail(m); }
+}
+setLook(document.documentElement.dataset.look==='ledger'?'ledger':'rack');
+renderCloud(); renderAgents();
+document.getElementById('overview').addEventListener('click',e=>{const c=e.target.closest('[data-id]');if(c)showMachine(c.dataset.id);});
 document.getElementById('backbtn').addEventListener('click',backToOverview);
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchView(t.dataset.view)));
+document.querySelectorAll('.look button').forEach(b=>b.addEventListener('click',()=>setLook(b.dataset.look)));
 </script>
 </body></html>
