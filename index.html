@@ -363,9 +363,12 @@ const CLOUD = [
   {name:'Perplexity',on:true,use:'Research & web search (MCP)',models:['sonar']},
   {name:'z.ai',on:true,use:'Lane: GLM-heavy tasks / a GLM-persona agent',models:['GLM-4.6','GLM-5.2']},
   {name:'Abacus.AI',on:true,use:'Lane: human deep-research / agent console (DeepAgent)',models:['routes to GPT / Claude / Gemini / DeepSeek / …']},
-  {name:'OpenCode',on:true,use:'Lane: free coding agent on LOCAL models (WOPR / apol)',models:['multi-model → local']},
+  {name:'OpenCode (CLI)',on:true,use:'Coding-agent CLI fronting 3 switchable plans — OpenCode Go (default), NanoGPT, and z.ai GLM; launchers: opencode / ng / glm',models:['OpenCode Go','NanoGPT','z.ai GLM']},
+  {name:'OpenCode Go',on:true,use:'Lane: flat-rate hosted coding agent · default plan under the opencode CLI',models:['multi-model → hosted']},
+  {name:'Command Code (GOAT)',on:true,use:'Lane: metered multi-model coding credits (own CLI) · usage-capped',models:['33+ open + closed coding models']},
+  {name:'Meta Muse (Muse Code)',on:true,use:'Lane: Meta Muse Code coding plan · NOT private — trains on submitted data, keep off private work',models:['Muse Spark']},
   {name:'Cline Pass',on:true,use:'Lane: IDE agentic coding (VS Code)',models:['multi-model']},
-  {name:'NanoGPT',on:true,use:'Lane: cheapest bulk / background jobs',models:['many open + frontier models']},
+  {name:'NanoGPT',on:true,use:'Lane: cheapest bulk / background jobs · also runnable via opencode (ng)',models:['many open + frontier models']},
 ];
 
 const AGENTS = [
