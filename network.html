@@ -240,9 +240,9 @@ const N = [
  {id:'apol',name:'apol',cat:'compute',lan:'B',ip:'…222',role:'Dual Radeon VII eGPU',
   specs:{Host:'T2 Mac · Linux',RAM:'16 GiB',GPU:'2× Radeon VII · 32 GB',OS:'Ubuntu 24.04 (T2)'},link:'index.html',
   desc:'A Thunderbolt eGPU box — each Radeon VII runs one dedicated model for a specific crew agent, kept resident for a stable local endpoint.'},
- {id:'twiki',name:'Twiki',cat:'compute',lan:'B',ip:'…7',role:'Single Radeon VII eGPU · MoE',
-  specs:{Host:'Mac mini 2018',GPU:'1× Radeon VII · 16 GB (of 2)',OS:'macOS 15.7'},link:'index.html',
-  desc:'Secondary eGPU inference node — a Mac mini with a Radeon VII over Thunderbolt, MoE-tuned; DrTheopolis’s “consort.”'},
+ {id:'twiki',name:'Twiki',cat:'compute',lan:'B',ip:'…7',status:'offline',role:'Offline · no GPU (its Radeon VII is in apol)',
+  specs:{Host:'Mac mini 2018',GPU:'none — both Radeon VIIs are in apol',OS:'macOS 15.7',Status:'offline'},
+  desc:'Was a single-Radeon VII eGPU node. It is offline now; both Radeon VII cards run in apol.'},
  // --- LAN-B agents ---
  {id:'kirk',name:'kirk · TheMacPro',cat:'agent',lan:'B',ip:'…77',role:'Primary dev · orchestration · backup hub',
   specs:{Host:'Mac Pro 2019 · Xeon',RAM:'768 GiB',Disk:'16× 14TB = 224 TB (SOP 112 TB irreplaceable)',OS:'macOS 15.6'},
